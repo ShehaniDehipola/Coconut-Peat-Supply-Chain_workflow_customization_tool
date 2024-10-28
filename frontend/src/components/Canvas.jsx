@@ -22,9 +22,12 @@ const PluginStepBox = styled.div`
   border: 1px solid #ccc;
   border-radius: 4px;
   width: 100%;
-  max-width: 420px;
+  max-width: 400px;
   text-align: center;
   cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 `;
 
 const EditBox = styled.div`
@@ -36,6 +39,12 @@ const EditBox = styled.div`
   width: 100%;
   max-width: 400px;
   text-align: left;
+`;
+
+const DropdownIcon = styled.span`
+  display: inline-block;
+  transition: transform 0.3s ease;
+  transform: ${(props) => (props.expanded ? 'rotate(180deg)' : 'rotate(0deg)')};
 `;
 
 const SubstepContainer = styled.div`
@@ -108,8 +117,28 @@ const TotalHuskRequiredBox = styled.div`
   font-weight: bold;
 `;
 
+const SendButton = styled.button`
+  background-color: #007bff;
+  color: white;
+  padding: 10px 20px;
+  margin-top: 15px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background-color 0.3s ease;
+
+  &:hover {
+    background-color: #0056b3;
+  }
+
+  &:focus {
+    outline: none;
+  }
+`;
+
 // Canvas component where steps are dropped
-const Canvas = () => {
+const Canvas = ({ steps }) => {
     const [expanded, setExpanded] = useState(false);
     const [userRequirementCount, setUserRequirementCount] = useState(0);
 
@@ -138,49 +167,66 @@ const sendToCore = () => {
         <CanvasContainer>
             <h3>Workflow Canvas</h3>
 
-            {/* Grading Plugin Step */}
-            <PluginStepBox expanded={expanded} onClick={toggleExpanded}>
-                Grading
+            {/* Droppable area for plugins */}
+      <Droppable droppableId="canvas-A" type="dropZone" isDropDisabled={false}>
+        {(provided) => (
+          <div ref={provided.innerRef} {...provided.droppableProps}>
+            {steps.map((step, index) => (
+              <Draggable key={step.id + '-buttonCanvas'} draggableId={step.id} index={index}>
+                {(provided) => (
+                  <PluginStepBox
+                    ref={provided.innerRef}
+                    {...provided.draggableProps}
+                    {...provided.dragHandleProps}
+                    expanded={expanded}
+                    onClick={toggleExpanded}
+                  >
+                    <span>{step.name}</span>
+                    {/* Dropdown icon for expanding/collapsing */}
+                    <DropdownIcon expanded={expanded}>▼</DropdownIcon>
+                    </PluginStepBox>
+                )}
+              </Draggable>
+            ))}
+            {provided.placeholder}
+          </div>
+        )}
+        </Droppable>
+        
+        {expanded && (
+        <EditBox>
+          <h4>Edit Grading Process</h4>
+          <p>This step captures the color of coconut husks and categorizes them.</p>
 
-                {/* Show the editing form when expanded */}
-                {expanded && (
-                    <EditBox>
-            <h4>Edit Grading Process</h4>
-            <p>This step captures the color of coconut husks and categorizes them.</p>
-
-            {/* Display substeps */}
-            <SubstepContainer>
-              <SubstepBox>
-                Capture Husk Color
-              </SubstepBox>
-
-              <Arrow>
-                <ArrowHead />
-              </Arrow>
-
-              <SubstepBox>
-                Categorize Husk <br />
+          <SubstepContainer>
+            <SubstepBox>Capture Husk Color</SubstepBox>
+            <Arrow>
+              <ArrowHead />
+            </Arrow>
+            <SubstepBox>
+              Categorize Husk <br />
               <LabelBox bgColor="#28a745">Qualified</LabelBox>
               <LabelBox bgColor="#ffc107">Acceptable</LabelBox>
               <LabelBox bgColor="#dc3545">Disqualified</LabelBox>
-              </SubstepBox>
-            </SubstepContainer>
+            </SubstepBox>
+          </SubstepContainer>
 
-            <div style={{ marginTop: '20px' }}>
-              <label>
-                Number of Required Husks:
-                <InputField
-                  type="number"
-                  value={userRequirementCount}
-                  onChange={(e) => setUserRequirementCount(e.target.value)}
-                />
-              </label>
-            </div>
-                        <TotalHuskRequiredBox>Total Husk Required (Qualified + Acceptable): {userRequirementCount}</TotalHuskRequiredBox>
-                        <button onSubmit={sendToCore}>Send to Core</button>
-          </EditBox>
-                )}
-            </PluginStepBox>
+          <div style={{ marginTop: '20px' }}>
+            <label>
+              Number of Required Husks:
+              <InputField
+                type="number"
+                value={userRequirementCount}
+                onChange={(e) => setUserRequirementCount(e.target.value)}
+              />
+            </label>
+          </div>
+          <TotalHuskRequiredBox>
+            Total Husk Required (Qualified + Acceptable): {userRequirementCount}
+          </TotalHuskRequiredBox>
+          <SendButton onClick={sendToCore}>Send to Core</SendButton>
+        </EditBox>
+      )}
         </CanvasContainer>
     );
 };

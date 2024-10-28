@@ -9,6 +9,7 @@
     "react": "^18.3.1",
     "react-beautiful-dnd": "^13.1.1",
     "react-dom": "^18.3.1",
+    "react-modal": "^3.16.1",
     "react-scripts": "5.0.1",
     "styled-components": "^6.1.13",
     "uuid": "^10.0.0",
@@ -37,5 +38,8 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "pegjs": "^0.10.0"
   }
 }
