@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { DragDropContext } from 'react-beautiful-dnd';
-import Sidebar from './Sidebar';
+import Sidebar from './sidebar/Sidebar';
 import Canvas from './Canvas';
 import styled from 'styled-components';
 import { v4 as uuid4 } from 'uuid'
