@@ -1,108 +1,154 @@
-import React, { useState, useEffect } from 'react';
-import styled from 'styled-components';
-import { generateDSLInstructions } from '../../utils/dslGenerator';
-import { parseInstructionsToGo } from '../../utils/goParser';
+import React, { useState } from "react";
+import styled from "styled-components";
+import { generateJSON } from "../../utils/jsonGenerator"; // Function to generate JSON from DSL
+import { generateDSL } from "../../utils/dslGenerator"; // Function to generate DSL from JSON
 
-// Styled components for layout
-const Container = styled.div`
-  display: flex;
-  width: 100%;
-  height: 100%;
-  box-sizing: border-box;
-  padding: 10px;
-`;
-
-const RightCorner = styled.div`
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  box-sizing: border-box;
-  overflow-y: auto;
-`;
-
-const Section = styled.div`
-  flex: 1;
-  margin-bottom: 20px;
-  padding: 10px;
-  border-radius: 8px;
+const InstructionsContainer = styled.div`
+  padding: 5px;
+  font-family: monospace;
+  font-size: 12px;
   overflow: hidden;
+  background-color: #d3d2d0;
+  flex-grow: 1; /* Allows it to grow and fill available space */
+  min-height: 200px; /* Ensures a reasonable minimum height */
+  height: 100%; /* Matches the parent's height if flex is used */
+  box-sizing: border-box; /* Ensures padding is included in the total height */
 `;
 
-const InstructionTitle = styled.h3`
-  font-size: 1.2em;
-  color: #333;
+const TabContainer = styled.div`
+  display: flex;
+  justify-content: flex-start;
+  margin-bottom: 10px;
+  border-bottom: 1px solid #ccc;
+`;
+
+const Tab = styled.button`
+  padding: 10px 20px;
+  font-size: 14px;
+  border: 1px solid black;
+  background-color: ${(props) => (props.active ? "#d89527" : "#f1f1f1")};
+  color: ${(props) => (props.active ? "white" : "#333")};
+  cursor: pointer;
+
+  &:hover {
+    background-color: ${(props) => (props.active ? "#9b6b1d" : "#ddd")};
+  }
+`;
+
+const HeaderContainer = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 10px;
 `;
 
-const DSLText = styled.div`
-  background-color: #f9f9f9;
-  color: #333;
+const HeaderTitle = styled.h3`
+  margin: 0;
+`;
+
+const UpdateButton = styled.button`
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 10px 15px;
+  font-size: 12px;
+  border-radius: 5px;
+  cursor: pointer;
+
+  &:hover {
+    background-color: #0056b3;
+  }
+`;
+
+const TextArea = styled.textarea`
+  flex-grow: 1; /* Allows the TextArea to take up remaining space */
+  width: 100%; /* Ensures it spans the full width of the container */
   font-family: monospace;
-  font-size: 1rem;
-  line-height: 1.4;
-  padding: 15px;
-  border-radius: 4px;
-  height: 250px;
-  overflow-y: auto;
-  box-sizing: border-box;
-  white-space: pre-wrap; /* Preserve line breaks */
+  font-size: 12px;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  resize: none; /* Prevents resizing if you want consistent layout */
+  box-sizing: border-box; /* Includes padding in width/height calculations */
+  overflow-y: auto; /* Adds scroll if content overflows vertically */
+  min-height: 250px; /* Ensures a reasonable minimum height */
 `;
 
-const GoPre = styled.pre`
-  background-color: #23272a;
-  color: #98c379;
-  font-family: 'Courier New', Courier, monospace;
-  font-size: 8px;
-  line-height: 1.4;
-  padding: 15px;
-  border-radius: 4px;
-  overflow-y: auto;
-  box-sizing: border-box;
-`;
+const DSLInstructions = ({ model, onUpdateModel }) => {
+  const [activeTab, setActiveTab] = useState("DSL Editor");
+  const [instructions, setInstructions] = useState("");
+  const [preview, setPreview] = useState("");
 
-const InstructionsContainer = ({ pluginName, nodes }) => {
-  const [dslInstructions, setDslInstructions] = useState('');
-  const [parsedGoCode, setParsedGoCode] = useState('');
-
-  useEffect(() => {
-    const dsl = generateDSLInstructions(pluginName, nodes);
-    
-    // Format DSL instructions to show each on a new line
-    const formattedDSL = Array.isArray(dsl) ? dsl.join('\n') : dsl;
-    setDslInstructions(formattedDSL);
-
-    if (formattedDSL) {
-      const goCode = parseInstructionsToGo(formattedDSL);
-      setParsedGoCode(goCode);
-    } else {
-      setParsedGoCode('');
+  // Generate DSL from the provided model when the component loads
+  React.useEffect(() => {
+    if (model) {
+      try {
+        const dsl = generateDSL(model); // Use the algorithm to generate DSL
+        setInstructions(dsl);
+        setPreview(dsl);
+      } catch (error) {
+        setInstructions(`Error: ${error.message}`);
+        setPreview(`Error: ${error.message}`);
+      }
     }
-  }, [pluginName, nodes]);
+  }, [model]);
+
+  // Handle updates to the instructions
+  const handleUpdate = () => {
+    try {
+      const updatedJSON = generateJSON(instructions); // Convert DSL to JSON
+      onUpdateModel(updatedJSON); // Pass the updated JSON back to the parent
+    } catch (error) {
+      const errorMessage = `Error: ${error.message}`;
+      setInstructions(errorMessage);
+      setPreview(errorMessage);
+    }
+  };
 
   return (
-    <Container>
-      <RightCorner>
-        <Section>
-          <InstructionTitle>Instructions</InstructionTitle>
-          {/* Map each instruction to a new line */}
-          <DSLText>
-            {dslInstructions
-              ? dslInstructions.split('\n').map((line, index) => (
-                  <div key={index}>{line}</div>
-                ))
-              : 'No instructions available.'}
-          </DSLText>
-        </Section>
+    <InstructionsContainer>
+      <TabContainer>
+        <Tab active={activeTab === "DSL Editor"} onClick={() => setActiveTab("DSL Editor")}>
+          Editor
+        </Tab>
+        <Tab active={activeTab === "Preview"} onClick={() => setActiveTab("Preview")}>
+          Preview
+        </Tab>
+        <Tab active={activeTab === "Settings"} onClick={() => setActiveTab("Settings")}>
+          Settings
+        </Tab>
+      </TabContainer>
 
-        {dslInstructions && (
-          <Section>
-            <InstructionTitle>Go Code</InstructionTitle>
-            <GoPre>{parsedGoCode}</GoPre>
-          </Section>
-        )}
-      </RightCorner>
-    </Container>
+      {/* Dynamic Content Based on Active Tab */}
+      {activeTab === "DSL Editor" && (
+        <div>
+          <HeaderContainer>
+            <HeaderTitle>Instruction Panel</HeaderTitle>
+            <UpdateButton onClick={handleUpdate}>Update Workflow</UpdateButton>
+          </HeaderContainer>
+          <TextArea
+            value={instructions}
+            onChange={(e) => setInstructions(e.target.value)}
+            placeholder="Write DSL instructions here..."
+          />
+        </div>
+      )}
+
+      {activeTab === "Preview" && (
+        <div>
+          <h4>Preview</h4>
+          <TextArea readOnly value={preview} placeholder="Preview of DSL instructions..." />
+        </div>
+      )}
+
+      {activeTab === "Settings" && (
+        <div>
+          <h4>Settings</h4>
+          <p>Settings content can go here...</p>
+        </div>
+      )}
+    </InstructionsContainer>
   );
 };
 
-export default InstructionsContainer;
+export default DSLInstructions;
