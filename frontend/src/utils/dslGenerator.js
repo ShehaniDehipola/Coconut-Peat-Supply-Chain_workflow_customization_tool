@@ -32,8 +32,8 @@ export function generateDSL(json) {
             instructions += `if "${currentNode.text}" == "Yes":\n`;
           } else {
             instructions += `else:\n`;
+            instructions += `\taction "${targetNode.text}"\n`;
           }
-          instructions += `\taction "${targetNode.text}"\n`;
 
           // Recursively traverse the target node
           traverse(link.to, visited);

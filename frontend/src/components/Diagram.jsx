@@ -41,7 +41,7 @@ const Diagram = ({ onExport, model }) => {
         "Auto",
         { locationSpot: go.Spot.Center },
         $(go.Shape, "Ellipse", {
-          fill: "green",
+          fill: "white",
           stroke: "black",
           portId: "",
           fromLinkable: true,
@@ -63,9 +63,8 @@ const Diagram = ({ onExport, model }) => {
         "Auto",
         { locationSpot: go.Spot.Center },
         $(go.Shape, "RoundedRectangle", {
-          fill: "lightblue",
+          fill: "white",
           stroke: "black",
-          strokeWidth: 2,
           portId: "",
           fromLinkable: true,
           toLinkable: true,
@@ -86,7 +85,7 @@ const Diagram = ({ onExport, model }) => {
         "Auto",
         { locationSpot: go.Spot.Center },
         $(go.Shape, "Diamond", {
-          fill: "yellow",
+          fill: "white",
           stroke: "black",
           portId: "",
           fromLinkable: true,
@@ -108,7 +107,7 @@ const Diagram = ({ onExport, model }) => {
         "Auto",
         { locationSpot: go.Spot.Center },
         $(go.Shape, "Ellipse", {
-          fill: "red",
+          fill: "white",
           stroke: "black",
           portId: "",
           fromLinkable: false,

@@ -9,7 +9,7 @@ const Container = styled.div`
     justify-content: center;
     align-items: center;
     height: 100vh; /* Full viewport height */
-    background-color: rgba(216, 149, 39, 0.3); /* Your desired background color */
+    background-color: rgba(216, 149, 39, 0.3); 
     margin: 0; /* Remove default margins */
     padding: 0; /* Remove default padding */
 `;

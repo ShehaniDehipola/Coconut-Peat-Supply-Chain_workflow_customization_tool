@@ -193,7 +193,7 @@ const CanvasHeading = styled.h3`
 
 const Sidebar = styled.div`
   width: 200px; /* Sidebar width */
-  background-color: #f8f9fa;
+  background-color: #d3d2d0;
   border-right: 1px solid #ccc;
   padding: 20px;
   box-sizing: border-box;
@@ -220,19 +220,19 @@ const AddPluginButton = styled.button`
 
 const Column = styled.div`
   padding: 10px;
-  background-color: #f0f0f0;
   border-radius: 5px;
   min-height: 300px;
 `;
 
 const ColumnCanvas = styled.div`
   display: flex;
+  margin-top: 100px;
   gap: 10px; /* Add spacing between items */
   padding: 10px;
   background-color: #f0f0f0;
-  border: 1px solid #ccc;
+  border: 2px dashed #ccc;
   border-radius: 5px;
-  min-height: 100px; /* Adjust height to fit horizontal layout */
+  min-height: 300px; /* Adjust height to fit horizontal layout */
   overflow-x: auto; /* Enable horizontal scrolling if content overflows */
   white-space: nowrap; /* Prevent items from wrapping */
 `;
@@ -240,8 +240,8 @@ const ColumnCanvas = styled.div`
 const Item = styled.div`
   padding: 10px;
   margin-bottom: 10px;
-  background-color: ${(props) => (props.isFixed ? "#ddd" : "#fff")};
-  border: 1px solid #ccc;
+  background-color: ${(props) => (props.isFixed ? "#ffffff" : "#fff")};
+  border: 1px solid black;
   border-radius: 5px;
   cursor: grab;
 `;
@@ -262,12 +262,15 @@ const ExpandButton = styled.button`
 const PluginCard = styled.div`
   display: flex;
   flex-direction: column;
+  width: 200px;
   border: 1px solid #ccc;
   border-radius: 5px;
   padding: 10px;
   margin-bottom: 10px;
-  background-color: #f9f9f9;
+  background-color: rgba(216, 149, 39, 0.1);
   cursor: pointer;
+  overflow: hidden; /* Prevents overflow of content */
+  position: relative; /* Ensures positioning of children relative to the card */
 `;
 
 
@@ -275,33 +278,34 @@ const ExpandedSection = styled.div`
   margin-top: 10px;
   padding: 10px;
   border-top: 1px solid #ddd;
-  background-color: #fff;
+  max-height: 150px; /* Set a maximum height to prevent overflow */
 `;
 
 const InputField = styled.div`
   display: flex;
-  align-items: center;
-  margin-bottom: 10px;
+  flex direction: column;
+  align-items: flex-start;
+  margin-top: 10px;
 
   label {
-    flex: 1;
     font-size: 14px;
-    margin-right: 10px;
+    margin-right: 5px;
   }
 
   input {
-    flex: 2;
+    width: 100%;
     padding: 5px;
     font-size: 14px;
     border: 1px solid #ccc;
     border-radius: 5px;
+    box-sizing: border-box;
   }
 `;
 
 const Step = styled.div`
   padding: 5px;
-  font-size: 14px;
-  border-left: 4px solid #007bff;
+  font-size: 12px;
+  border-left: 4px solid #d89527;
   margin-bottom: 5px;
   background-color: #eef;
   border-radius: 3px;
@@ -335,23 +339,20 @@ const WorkflowCustomizationTool = () => {
 
   const pluginsData = {
     "plugin-1": {
-      name: "Grading",
-      steps: ["Analyze Color", "Check Size"],
-      inputs: [{ label: "Threshold", parameter: "threshold" }],
-    },
-    "plugin-2": {
-      name: "Cutting",
-      steps: ["Initial Cut", "Polish Edges"],
-      inputs: [{ label: "Blade Type", parameter: "bladeType" }],
-    },
-    "plugin-3": {
-      name: "Washing",
-      steps: ["Soak", "Rinse"],
-      inputs: [
-        { label: "Water Level", parameter: "waterLevel" },
-        { label: "Temperature", parameter: "temperature" },
-      ],
-    },
+    name: "Grading",
+    steps: ["Collect Husks", "Grade Husks"],
+    inputs: [{ label: "Required Husk Count:", parameter: "requiredHusks" }],
+  },
+  "plugin-2": {
+    name: "Cutting",
+    steps: ["Cut Husks into Desired Dimensions", "Validate All Husks Processed"],
+    inputs: [],
+  },
+  "plugin-3": {
+    name: "Washing",
+    steps: ["Fill Tanks with Cocopeat and Water", "Wash for 24 Hours", "Wash for Another 24 Hours", "Final Wash for 12 Hours", "Check EC Level"],
+    inputs: [{ label: "EC Level:", parameter: "targetECLevel" }],
+  },
   };
 
   const onDragEnd = (result) => {
@@ -442,15 +443,15 @@ const WorkflowCustomizationTool = () => {
   </div>
   {expandedPlugins[item.id] && (
     <ExpandedSection>
-      <h4>Steps:</h4>
+      {/* <h4>Steps:</h4> */}
       {pluginsData[item.id].steps.map((step, idx) => (
         <Step key={idx}>{step}</Step>
       ))}
-      <h4>Inputs:</h4>
+      {/* <h4>Inputs:</h4> */}
       {pluginsData[item.id].inputs.map((input, idx) => (
         <InputField key={idx}>
           <label>{input.label}</label>
-          <input type="text" placeholder={input.parameter} />
+          <input type="text" />
         </InputField>
       ))}
     </ExpandedSection>
