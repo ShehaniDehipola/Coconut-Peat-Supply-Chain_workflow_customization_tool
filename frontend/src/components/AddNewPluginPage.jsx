@@ -3,6 +3,8 @@ import styled from "styled-components";
 import JSONViewer from "./parser/JsonViewer";
 import DSLInstructions from "./parser/InstructionsContainer";
 import Diagram from "./Diagram";
+import { generateGoCode } from "../utils/goGenerator";
+import axios from 'axios';
 
 // Styled components for layout
 const AppContainer = styled.div`
@@ -104,6 +106,82 @@ const AddNewPluginPage = () => {
     setModel(modelData);
   };
 
+  const handleGenerateCode = async () => {
+    if (!model) {
+      alert("No flowchart model to generate code from!");
+      return;
+    }
+
+    try {
+      const goCode = generateGoCode(model); // Call generateGoCode with the model
+      console.log("Generated Go Code:\n", goCode);
+      alert("Go Code Generated! Check the console for details.");
+    } catch (error) {
+      console.error("Error generating Go code:", error);
+    }
+
+    let port = 52222;
+    const fileBody = {
+      "content": `# Use an official Go image as the base image
+FROM golang:1.22.7-alpine as builder
+
+# Set the Current Working Directory inside the container
+WORKDIR /app
+
+# Install necessary packages for the build
+RUN apk add --no-cache git
+
+# Copy go.mod and go.sum files
+COPY go.mod go.sum ./
+
+# Download all dependencies. Dependencies are cached if the go.mod and go.sum files are not changed
+RUN go mod download
+
+# Copy the source code
+COPY . .
+
+# Copy the .env file to the container
+COPY .env .env
+
+# Install an environment variable loader (if needed)
+RUN go install github.com/joho/godotenv/cmd/godotenv@latest
+
+# Build the Go app
+RUN go build -o custom_plugin
+
+# Create a minimal runtime image
+FROM alpine:latest
+
+# Set the Current Working Directory inside the container
+WORKDIR /root/
+
+# Copy the pre-built binary from the builder stage
+COPY --from=builder /app/custom_plugin .
+
+# Copy the .env file to the runtime image's working directory
+COPY --from=builder /app/.env /root/
+
+# Make sure the binary is executable
+RUN chmod +x custom_plugin
+
+# Expose the gRPC port
+EXPOSE 50000
+
+# Command to run the executable
+CMD ["./custom_plugin"]`,
+      "filePath": "../core_plugin/custom.dockerfile"
+    }
+
+    try {
+      const response = await axios.put("http://localhost:5000/api/file/update-file", fileBody);
+      alert(response.data.message);
+    } catch (error) {
+      console.error(error);
+      alert("Failed to update the file.");
+    }
+
+  };
+
   const handleUpdateModel = (updatedModel) => {
     console.log("updated model", model)
     setModel(updatedModel); // Update the model state
@@ -144,7 +222,11 @@ const AddNewPluginPage = () => {
           <ButtonContainer>
           <ExportButton onClick={() => window.exportModel()}>
             Export Model
-          </ExportButton>
+            </ExportButton>
+            {/* Generate Go Code Button */}
+            <ExportButton onClick={handleGenerateCode}>
+              Generate Go Code
+            </ExportButton>
           </ButtonContainer>
           <Diagram onExport={handleModelChange} model={model} />
         </DiagramContainer>

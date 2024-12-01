@@ -122,6 +122,28 @@ const Diagram = ({ onExport, model }) => {
       )
     );
 
+    diagram.nodeTemplateMap.add(
+      "Wait",
+      $(
+        go.Node,
+        "Auto",
+        { locationSpot: go.Spot.Center },
+        $(go.Shape, "Circle", {
+          fill: "white",
+          stroke: "black",
+          portId: "",
+          fromLinkable: false,
+          toLinkable: true,
+          cursor: "pointer",
+        }),
+        $(
+          go.TextBlock,
+          { margin: 8, editable: true },
+          new go.Binding("text", "text").makeTwoWay()
+        )
+      )
+    );
+
     // Link Template
     diagram.linkTemplate = $(
       go.Link,
