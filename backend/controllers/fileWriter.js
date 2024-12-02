@@ -1,5 +1,6 @@
 const fs = require("fs");
 const Port = require("../models/Port")
+const path = require('path');
 
 // Endpoint to update the file
 exports.updateFile = async  (req, res) => {
@@ -32,11 +33,11 @@ exports.generateFile = async (req, res) => {
         }
 
         // Set default save path if none is provided
-        const directory = save_path || path.join(__dirname, "../core_plugin");
+        const fileSaveDestination = save_path || "../core_plugin";
 
         // Ensure the directory exists
-        if (!fs.existsSync(directory)) {
-            fs.mkdirSync(directory, { recursive: true });
+        if (!fs.existsSync(fileSaveDestination)) {
+            fs.mkdirSync(fileSaveDestination, { recursive: true });
         }
 
         // Template for the Go file
@@ -133,7 +134,7 @@ func main() {
         const fileName = `${plugin_name.toLowerCase()}_plugin.go`;
 
         // Full file path
-        const filePath = path.join(directory, fileName);
+        const filePath = path.join(fileSaveDestination, fileName);
 
         // Write the file to the specified path (overwrite if it already exists)
         fs.writeFileSync(filePath, goFileContent, "utf8");
