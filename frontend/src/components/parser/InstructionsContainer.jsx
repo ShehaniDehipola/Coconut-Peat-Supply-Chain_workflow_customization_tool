@@ -47,16 +47,18 @@ const HeaderTitle = styled.h3`
 `;
 
 const UpdateButton = styled.button`
-  background-color: #007bff;
-  color: white;
-  border: none;
+  background-color: transparent;
+  color: #2D3142;
+  border: 1px solid #2D3142;
   padding: 10px 15px;
   font-size: 12px;
   border-radius: 5px;
   cursor: pointer;
+  transition: background-color 0.3s, color 0.3s;
 
   &:hover {
-    background-color: #0056b3;
+    background-color: #2D3142;
+    color: white;
   }
 `;
 
@@ -124,13 +126,13 @@ const DSLInstructions = ({ model, onUpdateModel }) => {
         <div>
           <HeaderContainer>
             <HeaderTitle>Instruction Panel</HeaderTitle>
-            <UpdateButton onClick={handleUpdate}>Update Workflow</UpdateButton>
           </HeaderContainer>
           <TextArea
             value={instructions}
             onChange={(e) => setInstructions(e.target.value)}
             placeholder="Write DSL instructions here..."
           />
+            <UpdateButton onClick={handleUpdate}>Update Workflow</UpdateButton>
         </div>
       )}
 

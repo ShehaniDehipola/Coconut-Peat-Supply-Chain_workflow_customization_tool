@@ -10,20 +10,21 @@ import axios from 'axios';
 const AppContainer = styled.div`
   display: flex;
   flex-direction: column;
-  height: 100vh; /* Fills the entire viewport height */
+  height: calc(100vh - 60px);
+  overflow: hidden; /* Prevents scrolling */
 `;
 
 const ButtonContainer = styled.div`
   padding: 10px;
   text-align: right;
-  border-left: 1px solid black;
-  border-right: 1px solid black;
+  border-left: 1px solid #2D3142;
+  border-right: 1px solid #2D3142;
 `;
 
 const MainContainer = styled.div`
   display: flex;
   flex: 1; /* Allows children to grow */
-  height: 100%; /* Matches the parent's height */
+  overflow: hidden; /* Prevents scrolling within this container */
 `;
 
 const SidebarContainer = styled.div`
@@ -55,7 +56,7 @@ const Label = styled.label`
 
 const PaletteContainer = styled.div`
   flex: 1;
-  border-top: 1px solid black;
+  border-top: 1px solid #2D3142;
 `;
 
 const DiagramContainer = styled.div`
@@ -65,7 +66,7 @@ const DiagramContainer = styled.div`
 
 const JSONViewerContainer = styled.div`
   width: 250px;
-  border-left: 1px solid black;
+  border-left: 1px solid #2D3142;
   height: 100%;
 `;
 
@@ -78,17 +79,36 @@ const DSLContainer = styled.div`
 `;
 
 const ExportButton = styled.button`
-  background-color: #007bff;
-  color: white;
-  border: none;
+  background-color: transparent;
+  color: #2D3142;
+  border: 1px solid #2D3142;
   padding: 10px 15px;
   font-size: 12px;
   border-radius: 5px;
   cursor: pointer;
   margin: 10px 0;
+transition: background-color 0.3s, color 0.3s;
 
   &:hover {
-    background-color: #0056b3;
+    background-color: #2D3142;
+    color: white;
+  }
+`;
+
+const SubmitButton = styled.button`
+  background-color: #2D3142;
+  color: white;
+  border: 1px solid #2D3142;
+  padding: 10px 15px;
+  font-size: 12px;
+  border-radius: 5px;
+  cursor: pointer;
+  margin: 10px 0;
+transition: background-color 0.3s, color 0.3s;
+
+  &:hover {
+    background-color: #2D3142;
+    color: white;
   }
 `;
 
@@ -220,15 +240,17 @@ CMD ["./custom_plugin"]`,
         {/* Diagram Canvas */}
         <DiagramContainer>
           <ButtonContainer>
+          <SubmitButton onClick={handleGenerateCode}>
+              Generate Go Code
+            </SubmitButton>
+          </ButtonContainer>
+          <Diagram onExport={handleModelChange} model={model} />
+          {/* Generate Go Code Button */}
+          <ButtonContainer>
           <ExportButton onClick={() => window.exportModel()}>
             Export Model
             </ExportButton>
-            {/* Generate Go Code Button */}
-            <ExportButton onClick={handleGenerateCode}>
-              Generate Go Code
-            </ExportButton>
           </ButtonContainer>
-          <Diagram onExport={handleModelChange} model={model} />
         </DiagramContainer>
 
         {/* JSON Viewer */}

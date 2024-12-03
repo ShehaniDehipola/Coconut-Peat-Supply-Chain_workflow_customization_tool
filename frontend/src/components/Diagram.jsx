@@ -5,7 +5,7 @@ import * as go from "gojs";
 const DiagramContainer = styled.div`
   position: relative;
   flex: 1;
-  height: 600px;
+  height: calc(100vh - 200px);
   border-left: 1px solid black;
   border-right: 1px solid black;
 `;
@@ -144,6 +144,52 @@ const Diagram = ({ onExport, model }) => {
       )
     );
 
+    // Comment Shape Template
+  diagram.nodeTemplateMap.add(
+    "Comment",
+    $(
+      go.Node,
+      "Auto",
+      { locationSpot: go.Spot.Center },
+      $(go.Shape, "RoundedRectangle", {
+        fill: "lightyellow",
+        stroke: "yellow",
+        portId: "",
+        fromLinkable: false,
+        toLinkable: false,
+        cursor: "pointer",
+      }),
+      $(
+        go.TextBlock,
+        { margin: 8, editable: true },
+        new go.Binding("text", "text").makeTwoWay()
+      )
+    )
+  );
+
+  // Circle Shape Template
+  diagram.nodeTemplateMap.add(
+    "Circle",
+    $(
+      go.Node,
+      "Auto",
+      { locationSpot: go.Spot.Center },
+      $(go.Shape, "Circle", {
+        fill: "lightblue",
+        stroke: "blue",
+        portId: "",
+        fromLinkable: true,
+        toLinkable: true,
+        cursor: "pointer",
+      }),
+      $(
+        go.TextBlock,
+        { margin: 8, editable: true },
+        new go.Binding("text", "text").makeTwoWay()
+      )
+    )
+  );
+
     // Link Template
     diagram.linkTemplate = $(
       go.Link,
@@ -174,6 +220,8 @@ const Diagram = ({ onExport, model }) => {
         { category: "Process", text: "Process" },
         { category: "Decision", text: "Decision" },
         { category: "End", text: "End" },
+        { category: "Comment", text: "Comment" },
+      { category: "Circle", text: "Circle" },
       ]),
     });
 
