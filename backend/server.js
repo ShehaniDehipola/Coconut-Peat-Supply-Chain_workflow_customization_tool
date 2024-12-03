@@ -15,6 +15,12 @@ app.use(bodyParser.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/file', fileRoutes);
 
+// Middleware to parse JSON requests
+app.use(express.json());
+
+// Middleware to parse URL-encoded requests
+app.use(express.urlencoded({ extended: true }));
+
 // Database Connection
 mongoose
     .connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
