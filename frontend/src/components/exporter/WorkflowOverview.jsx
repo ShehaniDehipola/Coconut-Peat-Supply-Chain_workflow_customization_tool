@@ -63,7 +63,7 @@ const WorkflowHeader = styled.h2`
 `;
 
 const Button = styled.button`
-  background-color: #007bff;
+  background-color: #2D3142;
   color: white;
   padding: 8px 16px;
   border: none;

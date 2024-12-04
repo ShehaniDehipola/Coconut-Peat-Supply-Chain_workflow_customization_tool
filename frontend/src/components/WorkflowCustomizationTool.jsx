@@ -209,7 +209,7 @@ const Canvas = styled.div`
 const AddPluginButton = styled.button`
   margin-bottom: 20px;
   padding: 10px;
-  background-color: #007bff;
+  background-color: #2D3142;
   color: white;
   border: none;
   border-radius: 4px;
@@ -318,6 +318,28 @@ const DropdownIcon = styled.span`
   transition: transform 0.2s ease-in-out; /* Smooth rotation */
 `;
 
+const Button = styled.button`
+  background-color: transparent;
+  color: #2D3142;
+  border: 1px solid #2D3142;
+  padding: 8px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  margin-top: 100px;
+  margin-left: 120px;
+  
+  &:hover {
+    opacity: 0.8;
+  }
+    transition: background-color 0.3s, color 0.3s;
+
+  &:hover {
+    background-color: #2D3142;
+    color: white;
+  }
+`;
+
 const WorkflowCustomizationTool = () => {
   const navigate = useNavigate();
   const [plugins, setPlugins] = useState({
@@ -345,12 +367,12 @@ const WorkflowCustomizationTool = () => {
   },
   "plugin-2": {
     name: "Cutting",
-    steps: ["Cut Husks into Desired Dimensions", "Validate All Husks Processed"],
+    steps: ["Cut Husks ", "Validate All Husks Processed"],
     inputs: [],
   },
   "plugin-3": {
     name: "Washing",
-    steps: ["Fill Tanks with Cocopeat and Water", "Wash for 24 Hours", "Wash for Another 24 Hours", "Final Wash for 12 Hours", "Check EC Level"],
+    steps: ["Fill Tanks r", "Wash for 24 Hours", "Wash for Another 24 Hours", "Final Wash for 12 Hours", "Check EC Level"],
     inputs: [{ label: "EC Level:", parameter: "targetECLevel" }],
   },
   };
@@ -387,6 +409,21 @@ const WorkflowCustomizationTool = () => {
       ...prev,
       [pluginId]: !prev[pluginId],
     }));
+  };
+
+  const deletePlugin = (pluginId) => {
+    setPlugins((prev) => {
+      const updatedItems = prev.column2.items.filter((item) => item.id !== pluginId);
+      return {
+        ...prev,
+        column2: { ...prev.column2, items: updatedItems },
+      };
+    });
+  };
+
+  const updatePluginData = (pluginId) => {
+    // Handle updating plugin data
+    alert(`Updating plugin: ${pluginId}`);
   };
 
   return (
@@ -439,7 +476,7 @@ const WorkflowCustomizationTool = () => {
       onClick={() => toggleExpand(item.id)}
     >
       ▼
-    </DropdownIcon>
+                      </DropdownIcon>
   </div>
   {expandedPlugins[item.id] && (
     <ExpandedSection>
@@ -454,8 +491,17 @@ const WorkflowCustomizationTool = () => {
           <input type="text" />
         </InputField>
       ))}
+                        <Button onClick={() => updatePluginData(item.id)}>Update</Button>
+                  
     </ExpandedSection>
-  )}
+                    )}
+                    {/* Show delete button only when not expanded */}
+                    {/* {!expandedPlugins[item.id] && (
+                      <Button delete onClick={() => deletePlugin(item.id)}>
+                        Delete
+                      </Button>
+                    )} */}
+                    
 </PluginCard>
 
                 ))}

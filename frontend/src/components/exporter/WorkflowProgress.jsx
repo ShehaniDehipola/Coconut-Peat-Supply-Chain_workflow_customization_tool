@@ -27,7 +27,7 @@ const ProgressBar = styled.div`
     top: 0;
     height: 100%;
     width: ${(props) => props.progress || '0%'};
-    background: ${(props) => (props.progress === '100%' ? '#28a745' : '#007bff')};
+    background: ${(props) => (props.progress === '100%' ? '#28a745' : '#2D3142')};
     transition: width 0.3s ease;
   }
 `;
