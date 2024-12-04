@@ -95,7 +95,7 @@ const Diagram = ({ onExport, model }) => {
         $(
           go.TextBlock,
           { margin: 8, editable: true },
-          new go.Binding("text", "text").makeTwoWay()
+          new go.Binding("text", "text").makeTwoWay(),
         )
       )
     );
@@ -176,7 +176,7 @@ const Diagram = ({ onExport, model }) => {
       { locationSpot: go.Spot.Center },
       $(go.Shape, "Circle", {
         fill: "lightblue",
-        stroke: "blue",
+        stroke: "black",
         portId: "",
         fromLinkable: true,
         toLinkable: true,
