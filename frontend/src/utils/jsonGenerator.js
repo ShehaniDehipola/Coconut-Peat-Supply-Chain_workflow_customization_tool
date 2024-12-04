@@ -87,6 +87,18 @@ export function generateJSON(instructions) {
       if (label.startsWith("Repeat the")) {
         const actionLabel = label.replace("Repeat the ", "").trim();
         id = actionNodes[actionLabel];
+        if (!id) {
+          id = json.nodes.length + 1; // Generate a new ID if not found
+          json.nodes.push({
+            id,
+            key: id,
+            type: "Action",
+            category: "Process",
+            label: actionLabel,
+            text: actionLabel,
+          });
+          actionNodes[actionLabel] = id; // Store it in actionNodes
+        }
       } else if (label === "End the process") {
         id = json.nodes.length + 1;
         json.nodes.push({

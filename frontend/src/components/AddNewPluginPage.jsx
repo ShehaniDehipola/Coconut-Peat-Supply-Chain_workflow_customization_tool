@@ -10,12 +10,12 @@ import axios from 'axios';
 const AppContainer = styled.div`
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 60px);
+  height: 100%;
   overflow: hidden; /* Prevents scrolling */
 `;
 
 const ButtonContainer = styled.div`
-  padding: 10px;
+  padding: 5px;
   text-align: right;
   border-left: 1px solid #2D3142;
   border-right: 1px solid #2D3142;
@@ -74,7 +74,6 @@ const DSLContainer = styled.div`
   border-right: 1px solid #3e3d3c;
   display: flex;
   flex-direction: column; /* Ensures children stack vertically */
-  height: 100%; /* Matches the available height in the layout */
   overflow: hidden; /* Prevents overflow issues */
 `;
 
@@ -119,7 +118,7 @@ const AddNewPluginPage = () => {
 
   const handleModelChange = (modelData) => {
     if (!modelData) {
-    console.error("Model data is missing.");
+      console.error("Model data is missing.");
     return;
     }
     console.log("Model data received in handleModelChange:", modelData);
@@ -140,7 +139,7 @@ const AddNewPluginPage = () => {
       console.error("Error generating Go code:", error);
     }
 
-    const execute_logic = "qualified: 100";
+    const execute_logic = "// execute logic";
     let port = 52222;
     const updateContent = `# Use an official Go image as the base image
 FROM golang:1.22.7-alpine as builder
@@ -349,7 +348,7 @@ func main() {
         <DiagramContainer>
           <ButtonContainer>
           <SubmitButton onClick={handleGenerateCode}>
-              Generate Go Code
+              Save Plugin
             </SubmitButton>
           </ButtonContainer>
           <Diagram onExport={handleModelChange} model={model} />

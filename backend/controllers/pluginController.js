@@ -6,7 +6,6 @@ const protoLoader = require("@grpc/proto-loader");
 const axios = require("axios");
 const { updateFile } = require("../controllers/fileWriter");
 const { generateFile } = require("../controllers/fileWriter");
-// const { zipFolder } = require("../grpc-node-server/client");
 
 // Load the protobuf
 const PROTO_PATH = path.join(
@@ -45,8 +44,6 @@ exports.processAll = async (req, res) => {
     // Step 1: Update the first file
     await updateFile(updateContent, `../core_plugin/${plugin_name}.dockerfile`);
 
-    console.log("ABCD");
-
     // Step 2: Generate the second file
     const folderPath = await generateFile(
       goFileContent,
@@ -57,12 +54,7 @@ exports.processAll = async (req, res) => {
       save_path
     );
 
-    console.log("ABCD");
-
     // Step 3: Zip the folder
-    // const outputZipPath = path.join(folderPath, "core_plugin.zip");
-    // await zipFolder(folderPath, outputZipPath);
-    // Example usage:
     const pluginFolderPath = path.resolve("../", "core_plugin"); // Replace with your folder path
     const outputZipPath = path.resolve("../", "core_plugin.zip"); // Replace with your desired output path
 

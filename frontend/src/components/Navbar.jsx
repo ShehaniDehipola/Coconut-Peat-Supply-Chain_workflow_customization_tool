@@ -9,11 +9,11 @@ const NavbarContainer = styled.div`
   padding: 10px 20px;
   background-color: #d89527;
   color: white;
-  height: 60px;
+  height: 50px;
 `;
 
 const Logo = styled.div`
-  font-size: 40px;
+  font-size: 35px;
   font-weight: bold;
   cursor: pointer;
 `;
@@ -28,18 +28,16 @@ const ProfileIcon = styled.div`
     height: 35px;
     border-radius: 50%;
     margin-left: 10px;
+    background-color: #d3d2d0;
   }
 `;
 
 const Navbar = () => {
   return (
     <NavbarContainer>
-      <Logo>ABCDE</Logo>
+      <Logo>CocoSmart</Logo>
       <ProfileIcon>
-        <img
-          src="https://via.placeholder.com/35"
-          alt="Profile"
-        />
+        <img></img>
       </ProfileIcon>
     </NavbarContainer>
   );
