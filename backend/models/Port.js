@@ -1,16 +1,20 @@
 const mongoose = require('mongoose');
 
-// Dynamically use a specific database
-const portDB = mongoose.connection.useDb("portDB");
-
-// Define the schema
 const portSchema = new mongoose.Schema({
-    plugin_name: String,
-    port: Number,
-    status: Boolean,
-    description: String,
+    port: {
+        type: Number,
+        required: true,
+    },
+    status: {
+        type: Boolean,
+        required: true,
+        default: false, // false means available, true means used
+    },
+}, {
+    collection: 'port', // Explicitly name the collection if necessary
 });
 
-
-// Export a function to create the Port model for a specific database
-module.exports = (db) => db.model('Port', portSchema);
+// Export a function to create the model using the given connection instance
+module.exports = (connection) => {
+    return connection.model('Port', portSchema);
+};

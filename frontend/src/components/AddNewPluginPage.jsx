@@ -140,9 +140,9 @@ const AddNewPluginPage = () => {
       console.error("Error generating Go code:", error);
     }
 
+    const execute_logic = "qualified: 100";
     let port = 52222;
-    const fileBody = {
-      "content": `# Use an official Go image as the base image
+    const updateContent = `# Use an official Go image as the base image
 FROM golang:1.22.7-alpine as builder
 
 # Set the Current Working Directory inside the container
@@ -188,16 +188,124 @@ RUN chmod +x custom_plugin
 EXPOSE 50000
 
 # Command to run the executable
-CMD ["./custom_plugin"]`,
-      "filePath": "../core_plugin/custom.dockerfile"
+CMD ["./washing_plugin"]`
+    
+
+    const goFileContent = `
+package main
+
+import (
+    "context"
+    "log"
+    "net"
+    "strconv"
+    "time"
+
+    mongo "grading/config/db"
+    "grading/proto"
+
+    "go.mongodb.org/mongo-driver/bson"
+    "google.golang.org/grpc"
+)
+
+type ${pluginName}PluginServer struct {
+    proto.UnimplementedGradingPluginServer
+}
+
+// Register registers the plugin in MongoDB
+func (s *${pluginName}PluginServer) RegisterPlugin(ctx context.Context, req *proto.PluginRequest) (*proto.PluginResponse, error) {
+    collection := mongo.MongoClient.Database("pluginDB").Collection("plugins")
+    filter := bson.M{"plugin_name": req.PluginName}
+    var existingPlugin bson.M
+    err := collection.FindOne(ctx, filter).Decode(&existingPlugin)
+    if err == nil {
+        return &proto.PluginResponse{Success: false, Message: "Plugin is already registered"}, nil
+    }
+    plugin := bson.M{
+        "plugin_name":     req.PluginName,
+        "sensor_name":     "${sensorName}",
+        "userRequirement": userRequirement,
+        "status":          true,
+        "process":         "registered",
+        "created_at":      time.Now(),
+        "updated_at":      time.Now(),
     }
 
+    _, err = collection.InsertOne(ctx, plugin)
+    if err != nil {
+        log.Printf("Failed to register plugin: %v", err)
+        return &proto.PluginResponse{Success: false, Message: "Failed to register plugin"}, err
+    }
+
+    return &proto.PluginResponse{Success: true, Message: "Plugin registered successfully"}, nil
+}
+
+// ExecutePlugin executes the plugin logic
+func (s *${pluginName}PluginServer) ExecutePlugin(ctx context.Context, req *proto.PluginExecute) (*proto.ExecutionStatus, error) {
+    ${execute_logic}
+}
+
+// UnregisterPlugin deactivates the plugin
+func (s *${pluginName}PluginServer) UnregisterPlugin(ctx context.Context, req *proto.PluginUnregister) (*proto.UnregisterResponse, error) {
+    collection := mongo.MongoClient.Database("pluginDB").Collection("plugins")
+    filter := bson.M{"plugin_name": req.PluginName}
+    update := bson.M{
+        "$set": bson.M{
+            "status":     false,
+            "updated_at": time.Now(),
+        },
+    }
+
+    _, err := collection.UpdateOne(ctx, filter, update)
+    if err != nil {
+        return &proto.UnregisterResponse{Success: false, Message: "Failed to unregister plugin"}, err
+    }
+
+    return &proto.UnregisterResponse{Success: true, Message: "Plugin unregistered successfully"}, nil
+}
+
+func main() {
+    lis, err := net.Listen("tcp", ":50052")
+    if err != nil {
+        log.Fatalf("failed to listen: %v", err)
+    }
+    grpcServer := grpc.NewServer()
+    mongo.ConnectMongoDB()
+    proto.RegisterGradingPluginServer(grpcServer, &${pluginName}PluginServer{})
+
+    log.Println("gRPC server is running on port 50052")
+    if err := grpcServer.Serve(lis); err != nil {
+        log.Fatalf("Failed to serve: %v", err)
+    }
+}
+`
+    const requestBody = {
+      "updateContent": updateContent,
+      "goFileContent": goFileContent,
+    "plugin_name": pluginName,
+    "sensor_name": sensorName,
+    "userRequirement": "100",
+    "execute_logic": execute_logic,
+    "save_path": "../core_plugin",
+  };
+    
     try {
-      const response = await axios.put("http://localhost:5000/api/file/update-file", fileBody);
+      const response = await axios.post("http://localhost:5000/api/file/process-all", requestBody,
+        
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
       alert(response.data.message);
     } catch (error) {
       console.error(error);
       alert("Failed to update the file.");
+      if (error.response && error.response.data) {
+      console.log(`Failed to update the file: ${error.response.data.message}`);
+    } else {
+      console.log("Failed to update the file. Please try again later.");
+    }
     }
 
   };

@@ -43,7 +43,7 @@ exports.processAll = async (req, res) => {
     } = req.body;
 
     // Step 1: Update the first file
-    await updateFile(updateContent, "../core_plugin/custom.dockerfile");
+    await updateFile(updateContent, `../core_plugin/${plugin_name}.dockerfile`);
 
     console.log("ABCD");
 
