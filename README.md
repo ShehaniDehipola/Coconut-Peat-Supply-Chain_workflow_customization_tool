@@ -1,6 +1,6 @@
 # Workflow Customization Tool
 
-A dynamic, customizable workflow system designed for industries such as manufacturing, enabling non-technical users to easily create, manage, and optimize workflows. This tool simplifies complex processes with a drag-and-drop interface, real-time DSL preview, and seamless integration with backend systems.
+A dynamic, customizable workflow system designed for industries such as manufacturing, enabling non-technical also known as domain-specific users to easily create, manage, and optimize workflows. This tool simplifies complex processes with a drag-and-drop interface, real-time DSL preview, and seamless integration with backend systems.
 
 ---
 
@@ -29,3 +29,20 @@ A dynamic, customizable workflow system designed for industries such as manufact
 - **Others**: JSON (for workflow serialization)
 
 ---
+
+## Installation
+### Prerequisites
+- React (for frontend development)
+- Node.js (for backend development)
+- MongoDB (for storing data)
+
+### Steps
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/ShehaniDehipola/Coconut-Peat-Supply-Chain_workflow_customization_tool.git
+
+2. Frontend Setup:
+   ```bash
+   cd frontend
+   npm install
+   npm start
