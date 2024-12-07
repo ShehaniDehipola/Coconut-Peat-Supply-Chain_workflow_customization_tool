@@ -46,3 +46,29 @@ A dynamic, customizable workflow system designed for industries such as manufact
    cd frontend
    npm install
    npm start
+
+3. Backend Setup:
+   ```bash
+   cd backend
+   npm install
+   node server.js
+
+4. Grpc Server Setup:
+   ```bash
+   cd backend/grpc-node-server
+   node server.js
+
+5. Database Setup:
+   Ensure MongoDB is installed and running on the default port.
+   Optionally, update the database connection string in the backend `.env` file if needed.
+
+6. Verify the setup:
+   Frontend: Open `http://localhost:3000` in your browser.
+   Backend: Check the terminal logs to ensure the backend is running without errors.
+
+---
+
+## License
+This project is licensed under the MIT License. 
+
+
