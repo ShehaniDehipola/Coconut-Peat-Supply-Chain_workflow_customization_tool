@@ -1,6 +1,6 @@
 # Workflow Customization Tool
 
-A dynamic, customizable workflow system designed for industries such as manufacturing, enabling non-technical also known as domain-specific users to easily create, manage, and optimize workflows. This tool simplifies complex processes with a drag-and-drop interface, real-time DSL preview, and seamless integration with backend systems.
+A dynamic, customizable workflow system designed for industries such as manufacturing, enabling non-technical also known as domain-specific users to easily create, manage, and optimize workflows. This tool simplifies complex processes with a drag-and-drop interface, real-time Domain-Specific-Language preview, and seamless integration with backend systems.
 
 ---
 
