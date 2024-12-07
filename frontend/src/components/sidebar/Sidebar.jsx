@@ -13,7 +13,7 @@ import { useNavigate } from 'react-router-dom';
 const SidebarContainer = styled.div`
   width: 200px;
   padding: 10px;
-  background-color: #f4f4f4;
+  background-color: #d3d2d0;
 `;
 
 const PluginBox = styled.div`

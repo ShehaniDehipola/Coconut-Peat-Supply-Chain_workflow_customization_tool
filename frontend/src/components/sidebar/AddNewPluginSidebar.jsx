@@ -1,58 +1,50 @@
-import React from 'react';
-import styled from 'styled-components';
+import React from "react";
+import styled from "styled-components";
 
-// Styled components
-const SidebarContainer = styled.div`
-  width: 200px;
+const PaletteContainer = styled.div`
+  width: 240px;
   padding: 10px;
   background-color: #f4f4f4;
+  border-right: 1px solid #ddd;
   display: flex;
   flex-direction: column;
   gap: 10px;
 `;
 
 const ShapeBox = styled.div`
-  padding: 10px;
-  background-color: #ccc;
-  border: 1px solid #999;
+  padding: 12px;
+  background-color: #e0e0e0;
+  border: 1px solid #bbb;
   border-radius: 5px;
   cursor: grab;
   text-align: center;
+  font-size: 0.9em;
+  color: #333;
 
   &:hover {
-    background-color: #bbb;
+    background-color: #d0d0d0;
   }
 `;
 
-const AddNewPluginSidebar = ({ onDragStart, pluginName, setPluginName }) => {
-  const shapes = [
-    { id: 'action', label: 'Action (Rectangle)' },
-    { id: 'wait', label: 'Wait (Circle)' },
-    { id: 'check', label: 'Check (Diamond)' },
-    { id: 'triangle', label: 'Triangle' },
-  ];
-
+const AddNewPluginSidebar = ({ nodeTemplates }) => {
   return (
-    <SidebarContainer>
-      <h4>Plugin Name</h4>
-      <input
-        type="text"
-        value={pluginName}
-        onChange={(e) => setPluginName(e.target.value)}
-        placeholder="Enter plugin name"
-      />
-
+    <PaletteContainer>
       <h4>Shapes</h4>
-      {shapes.map((shape) => (
+      {nodeTemplates.map((template) => (
         <ShapeBox
-          key={shape.id}
+          key={template.category}
           draggable
-          onDragStart={(event) => onDragStart(event, shape.id)}
+          onDragStart={(e) =>
+            e.dataTransfer.setData(
+              "application/json",
+              JSON.stringify({ category: template.category, text: template.text })
+            )
+          }
         >
-          {shape.label}
+          {template.text}
         </ShapeBox>
       ))}
-    </SidebarContainer>
+    </PaletteContainer>
   );
 };
 

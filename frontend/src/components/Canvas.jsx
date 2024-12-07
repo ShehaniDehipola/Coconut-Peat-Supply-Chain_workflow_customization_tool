@@ -168,11 +168,11 @@ const sendToCore = () => {
             <h3>Workflow Canvas</h3>
 
             {/* Droppable area for plugins */}
-      <Droppable droppableId="canvas-A" type="dropZone" isDropDisabled={false}>
+      <Droppable droppableId="canvas" type="dropZone" isDropDisabled={false}>
         {(provided) => (
           <div ref={provided.innerRef} {...provided.droppableProps}>
             {steps.map((step, index) => (
-              <Draggable key={step.id + '-buttonCanvas'} draggableId={step.id} index={index}>
+              <Draggable key={step.id} draggableId={step.id} index={index}>
                 {(provided) => (
                   <PluginStepBox
                     ref={provided.innerRef}
