@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grading-plugin
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: grading-plugin
+  template:
+    metadata:
+      labels:
+        app: grading-plugin
+    spec:
+      containers:
+      - name: grading-plugin
+        image: harith/grading-plugin:latest 
+        ports:
+        - containerPort: 50052
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: grading-plugin-service
+spec:
+  selector:
+    app: grading-plugin
+  ports:
+    - protocol: TCP
+      port: 50052
+      targetPort: 50052
+  type: ClusterIP
