@@ -1,3 +1,4 @@
+const Plugin = require("../models/Plugin");
 const fs = require("fs");
 const path = require("path");
 const archiver = require("archiver");
@@ -6,6 +7,55 @@ const protoLoader = require("@grpc/proto-loader");
 const axios = require("axios");
 const { updateFile } = require("../controllers/fileWriter");
 const { generateFile } = require("../controllers/fileWriter");
+
+// Save Plugin JSON
+exports.savePlugin = async (req, res) => {
+  try {
+    const { plugin_name, nodes, links } = req.body;
+
+    if (!plugin_name || !nodes || !links) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Missing required fields" });
+    }
+
+    // Check if plugin already exists
+    const existingPlugin = await Plugin.findOne({ plugin_name });
+
+    if (existingPlugin) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Plugin already exists" });
+    }
+
+    const plugin = new Plugin({ plugin_name, nodes, links });
+    await plugin.save();
+    res
+      .status(201)
+      .json({ success: true, message: "Plugin saved successfully" });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// Fetch Plugin JSON by Plugin Name
+exports.getPlugin = async (req, res) => {
+  try {
+    const plugin = await Plugin.findOne({
+      plugin_name: req.params.plugin_name,
+    });
+
+    if (!plugin) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Plugin not found" });
+    }
+
+    res.json({ success: true, data: plugin });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
 
 // Load the protobuf
 const PROTO_PATH = path.join(
