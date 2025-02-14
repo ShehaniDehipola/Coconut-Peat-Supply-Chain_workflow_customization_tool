@@ -10,6 +10,7 @@ const NavbarContainer = styled.div`
   background-color: #d89527;
   color: white;
   height: 50px;
+  
 `;
 
 const Logo = styled.div`

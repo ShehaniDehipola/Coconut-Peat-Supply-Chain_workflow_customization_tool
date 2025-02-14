@@ -177,7 +177,7 @@ import styled from "styled-components";
 // Styled Components
 const AppContainer = styled.div`
   display: flex;
-  height: 100vh; /* Full viewport height */
+  height: calc(100vh - 50px); /* Full viewport height */
 `;
 
 const WorkflowContainer = styled.div`
@@ -186,9 +186,29 @@ const WorkflowContainer = styled.div`
   gap: 10px; /* Add spacing between heading and canvas */
 `;
 
+const CanvasHeadingContainer = styled.div`
+  display: flex;
+  justify-content: space-between; /* Aligns left and right */
+  align-items: center;
+  padding-bottom: 10px;
+`;
+
 const CanvasHeading = styled.h3`
-  margin: 0; /* Remove any default margin for better alignment */
-  padding-bottom: 10px; /* Optional padding for better spacing */
+  margin: 0;
+`;
+
+const BuildWorkflowButton = styled.button`
+  background-color: #2D3142;
+  color: white;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 14px;
+
+  &:hover {
+    background-color: #1F2532;
+  }
 `;
 
 const Sidebar = styled.div`
@@ -459,7 +479,13 @@ const WorkflowCustomizationTool = () => {
 
         {/* Workflow Canvas */}
         <Canvas>
-          <CanvasHeading>{plugins.column2.name}</CanvasHeading>
+          {/* Heading with "Build Workflow" button on the right */}
+          <CanvasHeadingContainer>
+            <CanvasHeading>{plugins.column2.name}</CanvasHeading>
+            <BuildWorkflowButton onClick={() => navigate("/workflow-details")}>
+              Build Workflow
+            </BuildWorkflowButton>
+          </CanvasHeadingContainer>
           <Droppable droppableId="column2">
             {(provided) => (
               <ColumnCanvas ref={provided.innerRef} {...provided.droppableProps}>
