@@ -91,23 +91,59 @@ exports.getAWorkflow = async (req, res) => {
   }
 };
 
-// Update a workflow (Assign Manufacturer, Modify Steps)
+// get all versions workflows by name
+exports.getWorkflowVersions = async (req, res) => {
+  try {
+    const versions = await Workflow.find({
+      workflow_name: req.params.workflowName,
+    }).sort({ version: -1 });
+
+    if (!versions.length) {
+      return res.status(404).json({ message: "No versions found" });
+    }
+
+    res.status(200).json(versions);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// Update workflow and create new version
 exports.updateWorkflow = async (req, res) => {
   try {
-    //validation checks before updating the workflow
+    /// validation checks before updating
     await validateWorkflowVersion(req, res, () => {});
     await validateManufacturer(req, res, () => {});
 
-    const workflow = await Workflow.findById(req.params.id);
-    if (!workflow)
+    // Find the existing workflow
+    const existingWorkflow = await Workflow.findById(req.params.id);
+    if (!existingWorkflow) {
       return res.status(404).json({ message: "Workflow not found" });
+    }
 
-    Object.assign(workflow, req.body);
-    workflow.updated_at = Date.now();
-    workflow.version += 1;
+    // Create a new version (incremented)
+    const newVersion = existingWorkflow.version + 1;
 
-    const updatedWorkflow = await workflow.save();
-    res.json(updatedWorkflow);
+    // Create a new document instead of modifying the existing one
+    const newWorkflow = new Workflow({
+      workflow_name: req.body.workflow_name || existingWorkflow.workflow_name,
+      exporter_id: existingWorkflow.exporter_id,
+      steps: req.body.steps || existingWorkflow.steps,
+      manufacturer_id:
+        req.body.manufacturer_id || existingWorkflow.manufacturer_id,
+      status: req.body.status || existingWorkflow.status,
+      version: newVersion, // Incremented version
+      created_at: existingWorkflow.created_at, // Keep original creation date
+      updated_at: Date.now(),
+    });
+
+    // Save the new version in the database
+    await newWorkflow.save();
+
+    res.status(201).json({
+      message: "Workflow updated as a new version",
+      workflow: newWorkflow,
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

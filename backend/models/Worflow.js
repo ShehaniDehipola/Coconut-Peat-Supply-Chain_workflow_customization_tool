@@ -16,6 +16,7 @@ const workflowSchema = new mongoose.Schema({
     enum: ["pending", "in_progress", "completed"],
     default: "pending",
   },
+  version: { type: Number, required: true, default: 1 },
   created_at: { type: Date, default: Date.now },
   updated_at: { type: Date, default: Date.now },
   version: { type: Number, default: 1 },
