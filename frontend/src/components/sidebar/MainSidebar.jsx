@@ -1,6 +1,7 @@
 import React from "react";
 import styled from "styled-components";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 
 import dashboardIcon from "../../assests/dashboard.png"
 import manufacturerIcon from "../../assests/conveyor.png"
@@ -23,6 +24,7 @@ const SidebarContainer = styled.div`
   position: fixed;
   left: 0;
   overflow-y: auto;
+  justify-content: space-between;
 `;
 
 // const Logo = styled.h2`
@@ -50,7 +52,7 @@ const SidebarContainer = styled.div`
 // `;
 
 const NavSection = styled.div`
-  margin-bottom: 20px;
+  flex-grow: 1;
 `;
 
 const NavItem = styled.div`
@@ -70,14 +72,23 @@ const NavItem = styled.div`
   }
 `;
 
+const BottomContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: auto;
+  padding-bottom: 40px;
+`;
+
 const QuickActions = styled.div`
-  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 `;
 
 const QuickActionButton = styled.button`
   width: 100%;
   padding: 5px;
-  margin-top: 10px;
   background: #d89527;
   color: black;
   border: none;
@@ -98,56 +109,104 @@ const Icon = styled.img`
 
 const LogoutButton = styled.button`
   width: 100%;
-  padding: 5px;
-  margin-top: 20px;
+  padding: 10px;
   background: transparent;
-  outline: #d89527;
   color: white;
-  border: none;
+  border: 2px solid #d89527;
   border-radius: 5px;
   font-size: 16px;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  // position: absolute;
+  // bottom: 60px; /* Anchors logout button to the bottom */
+  // left: 0;
+  // right: 0;
+  // margin: auto;
+  // width: 90%;
 
   &:hover {
     background: #d89527;
+    color: black;
   }
 `;
 
-const MainSidebar = ({ role = "Exporter" }) => {
+const MainSidebar = ({ role }) => {
   const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    try {
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        alert("No token found, redirecting to login.");
+        navigate("/");
+        return;
+      }
+
+      await axios.post(
+        "http://localhost:5000/api/auth/logout",
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      // Remove user session
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+
+      // Redirect to login page
+      navigate("/");
+    } catch (error) {
+      console.error("Logout failed:", error);
+      alert("Failed to logout. Please try again.");
+    }
+  };
 
   return (
     <SidebarContainer>
 
       {/* Navigation */}
       <NavSection>
-        <NavItem onClick={() => navigate("/exporter-dashboard")}><Icon src={dashboardIcon} alt="Dashboard" />Dashboard</NavItem>
-        <NavItem onClick={() => navigate("/workflows")}><Icon src={workflowIcon} alt="Workflow" />Workflows</NavItem>
 
-        {role === "Exporter" && (
+        {role === "exporter" && (
           <>
+          <NavItem onClick={() => navigate("/exporter-dashboard")}><Icon src={dashboardIcon} alt="Dashboard" />Dashboard</NavItem>
+          <NavItem onClick={() => navigate("/workflows")}><Icon src={workflowIcon} alt="Workflow" />Workflows</NavItem>
             <NavItem onClick={() => navigate("/manufacturers")}><Icon src={manufacturerIcon} alt="Manufacturer" />Manufacturers</NavItem>
-          </>
-        )}
-
-        {role === "Manufacturer" && (
-          <>
-            <NavItem onClick={() => navigate("/assigned-workflows")}>Assigned Workflows</NavItem>
-          </>
-        )}
-
-        <NavItem onClick={() => navigate("/reports")}><Icon src={reportsIcon} alt="Report" />Reports & Analytics</NavItem>
+            <NavItem onClick={() => navigate("/reports")}><Icon src={reportsIcon} alt="Report" />Reports & Analytics</NavItem>
         <NavItem onClick={() => navigate("/settings")}><Icon src={settingsIcon} alt="Settings" />Settings</NavItem>
+          </>
+        )}
+
+        {role === "manufacturer" && (
+          <>
+          <NavItem onClick={() => navigate("/manufacturer-dashboard")}><Icon src={dashboardIcon} alt="Dashboard" />Dashboard</NavItem>
+          <NavItem onClick={() => navigate("/manufacturer-workflow")}><Icon src={workflowIcon} alt="Workflow" />Workflows</NavItem>
+            {/* <NavItem onClick={() => navigate("/assigned-workflows")}>Assigned Workflows</NavItem> */}
+            <NavItem onClick={() => navigate("/reports")}><Icon src={reportsIcon} alt="Report" />Reports & Analytics</NavItem>
+            <NavItem onClick={() => navigate("/settings")}><Icon src={settingsIcon} alt="Settings" />Settings</NavItem>
+          </>
+        )}
+
       </NavSection>
 
+      <BottomContainer>
       {/* Quick Actions */}
+      {role === "exporter" && (
       <QuickActions>
         <QuickActionButton onClick={() => navigate("/add-plugin")}><Icon src={plusIcon} alt="plus" />Add Plugin</QuickActionButton>
-        <QuickActionButton onClick={() => navigate("/build-workflow")}><Icon src={plusIcon} alt="plus" />Create Workflow</QuickActionButton>
+        <QuickActionButton onClick={() => navigate("/new-workflow")}><Icon src={plusIcon} alt="plus" />Create Workflow</QuickActionButton>
       </QuickActions>
 
+      )}
       {/* Logout Button */}
-      <LogoutButton onClick={() => alert("Logging out...")}><Icon src={LogoutIcon} alt="logout" />Logout</LogoutButton>
+      <LogoutButton onClick={handleLogout}><Icon src={LogoutIcon} alt="logout" />Logout</LogoutButton>
+      </BottomContainer>
     </SidebarContainer>
   );
 };

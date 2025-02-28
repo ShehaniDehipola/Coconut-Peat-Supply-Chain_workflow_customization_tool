@@ -25,6 +25,7 @@ const MainContainer = styled.div`
   display: flex;
   flex: 1; /* Allows children to grow */
   overflow: hidden; /* Prevents scrolling within this container */
+  margin-top: 10px;
 `;
 
 const SidebarContainer = styled.div`

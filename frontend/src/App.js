@@ -17,21 +17,25 @@ import WorkflowCreation from "./components/exporter/WorkflowCreation";
 import WorkflowDetailsPage from "./components/exporter/WorkflowDetails";
 import MainSidebar from "./components/sidebar/MainSidebar";
 import styled from "styled-components";
+import { useUser } from "./context/UserContext";
 
 const ContentArea = styled.div`
   margin-left: 240px; /* Same as sidebar width */
+  margin-top: 60px;
 `;
 
 function App() {
   const location = useLocation(); // Get current route location
+  const { user } = useUser(); // Get user from context
 
-  const showNavbar = location.pathname !== "/login"; // Show Navbar only if not on Login page
+  const hideUI = ["/", "/login", "/signup"].includes(location.pathname); // Check if the path is login or signup
 
   return (
     <div>
-      {showNavbar && <Navbar />} {/* Conditionally render Navbar */}
-      <MainSidebar role="Exporter"></MainSidebar>
-      <ContentArea>
+      {!hideUI && <Navbar />} {/* Conditionally render Navbar */}
+      {!hideUI && <MainSidebar role={user?.role} />}{" "}
+      {/* Conditionally render Sidebar */}
+      <ContentArea style={{ marginLeft: hideUI ? "0px" : "240px" }}>
         <Routes>
           {/* Route for the Workflow Customization Tool */}
           <Route path="/new-workflow" element={<WorkflowCustomizationTool />} />

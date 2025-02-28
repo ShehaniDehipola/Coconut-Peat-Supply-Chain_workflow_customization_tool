@@ -8,15 +8,55 @@ const Container = styled.div`
 `;
 
 const WorkflowHeader = styled.h2`
-  text-align: center;
+  text-align: flex-start;
 `;
 
-const StepContainer = styled.div`
+/* Flexbox wrapper to place Step and Notes side by side */
+const StepWrapper = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 20px;
   margin-bottom: 20px;
+
+  @media (max-width: 768px) {
+    flex-direction: column; /* Stack on smaller screens */
+  }
+`;
+
+/* Step container */
+const StepContainer = styled.div`
+  flex: 1;
   padding: 16px;
   background-color: #f8f9fa;
   border-radius: 8px;
+  border: 2px solid #d89527;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+`;
+
+/* Notes container */
+const NotesContainer = styled.div`
+  flex: 1;
+  padding: 16px;
+  background-color: rgba(45, 49, 66, 0.2);
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+`;
+
+const NotesLabel = styled.label`
+  font-size: 14px;
+  font-weight: bold;
+  margin-bottom: 4px;
+  display: block;
+`;
+
+const NotesInput = styled.textarea`
+  width: 90%;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  min-height: 70px;
+  resize: vertical;
 `;
 
 const StepHeader = styled.div`
@@ -30,16 +70,18 @@ const StatusSelect = styled.select`
   padding: 8px;
   border: 1px solid #ccc;
   border-radius: 4px;
-  color: ${(props) => {
+  font-weight: bold;
+
+   ${(props) => {
     switch (props.value) {
       case 'Pending':
-        return '#ffc107'; // Yellow
+        return 'background-color: #ffc107; color: black;';
       case 'In Progress':
-        return '#17a2b8'; // Blue
+        return 'background-color: #17a2b8; color: white;';
       case 'Completed':
-        return '#28a745'; // Green
+        return 'background-color: #28a745; color: white;';
       default:
-        return '#6c757d'; // Grey
+        return 'background-color: #6c757d; color: white;';
     }
   }};
 `;
@@ -73,6 +115,7 @@ export const ManufacturerWorkflowPage = ({ workflow }) => {
           { name: 'Quality Check', completed: false },
           { name: 'Final Grading', completed: false },
         ],
+        notes: '',
       },
       {
         name: 'Cutting',
@@ -81,6 +124,7 @@ export const ManufacturerWorkflowPage = ({ workflow }) => {
           { name: 'Cutting Preparation', completed: false },
           { name: 'Cutting Execution', completed: false },
         ],
+        notes: '',
       },
       {
         name: 'Washing',
@@ -89,6 +133,7 @@ export const ManufacturerWorkflowPage = ({ workflow }) => {
           { name: 'First Wash', completed: false },
           { name: 'Second Wash', completed: false },
         ],
+        notes: '',
       },
     ]);
   }, [workflow]);
@@ -96,7 +141,8 @@ export const ManufacturerWorkflowPage = ({ workflow }) => {
   const handleSubStepChange = (stepIndex, subStepIndex) => {
     setSteps((prevSteps) => {
       const updatedSteps = [...prevSteps];
-      updatedSteps[stepIndex].subSteps[subStepIndex].completed = !updatedSteps[stepIndex].subSteps[subStepIndex].completed;
+      updatedSteps[stepIndex].subSteps[subStepIndex].completed =
+        !updatedSteps[stepIndex].subSteps[subStepIndex].completed;
       return updatedSteps;
     });
   };
@@ -109,38 +155,53 @@ export const ManufacturerWorkflowPage = ({ workflow }) => {
     });
   };
 
+  const handleNotesChange = (stepIndex, newNote) => {
+    setSteps((prevSteps) => {
+      const updatedSteps = [...prevSteps];
+      updatedSteps[stepIndex].notes = newNote;
+      return updatedSteps;
+    });
+  };
+
   return (
     <Container>
-      <WorkflowHeader>{workflow?.name || 'Manufacturer Workflow Progress'}</WorkflowHeader>
+      <WorkflowHeader>{workflow?.name || 'Workflow Progress'}</WorkflowHeader>
       <p>Description: {workflow?.description}</p>
-      <p>Assigned Manufacturer: {workflow?.manufacturer}</p>
+      <p>Assigned by: {workflow?.exporter}</p>
       <p>Date of Creation: {workflow?.dateSent}</p>
 
       <h3>Workflow Steps and Sub-Steps</h3>
       {steps.map((step, index) => (
-        <StepContainer key={index}>
-          <StepHeader>
-            <h3>{step.name}</h3>
-            <StatusSelect
-              value={step.status}
-              onChange={(e) => handleStatusChange(index, e.target.value)}
-            >
-              <option value="Pending">Pending</option>
-              <option value="In Progress">In Progress</option>
-              <option value="Completed">Completed</option>
-            </StatusSelect>
-          </StepHeader>
-          {step.subSteps.map((subStep, subIndex) => (
-            <SubStep key={subIndex} completed={subStep.completed}>
-              <Checkbox
-                type="checkbox"
-                checked={subStep.completed}
-                onChange={() => handleSubStepChange(index, subIndex)}
-              />
-              {subStep.name}
-            </SubStep>
-          ))}
-        </StepContainer>
+        <StepWrapper key={index}>
+          {/* Step Section */}
+          <StepContainer>
+            <StepHeader>
+              <h3>{step.name}</h3>
+              <StatusSelect value={step.status} onChange={(e) => handleStatusChange(index, e.target.value)}>
+                <option style={{ backgroundColor: "white", fontColor: "black" } } value="Pending">Pending</option>
+                <option style={{ backgroundColor: "white", fontColor: "black" } } value="In Progress">In Progress</option>
+                <option style={{ backgroundColor: "white", fontColor: "black" } } value="Completed">Completed</option>
+              </StatusSelect>
+            </StepHeader>
+
+            {step.subSteps.map((subStep, subIndex) => (
+              <SubStep key={subIndex} completed={subStep.completed}>
+                <Checkbox type="checkbox" checked={subStep.completed} onChange={() => handleSubStepChange(index, subIndex)} />
+                {subStep.name}
+              </SubStep>
+            ))}
+          </StepContainer>
+
+          {/* Notes Section (Next to StepContainer) */}
+          <NotesContainer>
+            <NotesLabel>Notes (Optional):</NotesLabel>
+            <NotesInput
+              value={step.notes}
+              onChange={(e) => handleNotesChange(index, e.target.value)}
+              placeholder="Write any special instructions or comments for this step..."
+            />
+          </NotesContainer>
+        </StepWrapper>
       ))}
     </Container>
   );
