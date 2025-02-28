@@ -185,3 +185,55 @@ exports.deleteWorkflow = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+// Check Validations
+exports.checkValidations = async (req, res, next) => {
+  try {
+    console.log("Received workflow data for validation:", req.body);
+
+    // Run each validation and return immediately if any fail
+    let validationFailed = false;
+
+    await validateWorkflowStructure(req, res, () => {
+      if (res.headersSent) validationFailed = true;
+    });
+    if (validationFailed) return;
+
+    await validateRequiredPlugins(req, res, () => {
+      if (res.headersSent) validationFailed = true;
+    });
+    if (validationFailed) return;
+
+    await validateWorkflowOrder(req, res, () => {
+      if (res.headersSent) validationFailed = true;
+    });
+    if (validationFailed) return;
+
+    // if all validations pass, send success response
+    res.status(200).json({ message: "Workflow validation successful." });
+  } catch (err) {
+    console.error("Validation error:", err.message);
+    if (!res.headersSent) {
+      res.status(500).json({ error: err.message });
+    }
+  }
+};
+
+// Get all workflows by manufacturer ID
+exports.getWorkflowsByManufacturer = async (req, res) => {
+  try {
+    const { manufacturerId } = req.params;
+
+    const workflows = await Workflow.find({ manufacturer_id: manufacturerId });
+
+    if (!workflows.length) {
+      return res
+        .status(404)
+        .json({ message: "No workflows found for this manufacturer" });
+    }
+
+    res.status(200).json(workflows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};

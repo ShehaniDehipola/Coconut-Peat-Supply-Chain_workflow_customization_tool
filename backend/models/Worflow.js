@@ -19,7 +19,6 @@ const workflowSchema = new mongoose.Schema({
   version: { type: Number, required: true, default: 1 },
   created_at: { type: Date, default: Date.now },
   updated_at: { type: Date, default: Date.now },
-  version: { type: Number, default: 1 },
 });
 
 module.exports = mongoose.model("Workflow", workflowSchema);

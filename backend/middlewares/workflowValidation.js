@@ -2,20 +2,20 @@ const Workflow = require("../models/Worflow");
 
 // 1. Workflow structure validation
 const validateWorkflowStructure = (req, res, next) => {
-  const { workflow_name, exporter_id, steps } = req.body;
+  const { steps } = req.body;
 
-  if (
-    !workflow_name ||
-    !exporter_id ||
-    !Array.isArray(steps) ||
-    steps.length === 0
-  ) {
-    return res
-      .status(400)
-      .json({
-        message: "Workflow must have a name, exporter, and at least one step.",
-      });
-  }
+  // if (
+  //   !workflow_name ||
+  //   !exporter_id ||
+  //   !Array.isArray(steps) ||
+  //   steps.length === 0
+  // ) {
+  //   return res
+  //     .status(400)
+  //     .json({
+  //       message: "Workflow must have a name, exporter, and at least one step.",
+  //     });
+  // }
 
   // Validate each step has a required_amount
   for (let step of steps) {
@@ -58,13 +58,11 @@ const validateWorkflowOrder = (req, res, next) => {
       correctOrder.indexOf(workflowOrder[i]) >
       correctOrder.indexOf(workflowOrder[i + 1])
     ) {
-      return res
-        .status(400)
-        .json({
-          message: `Invalid step order: ${
-            workflowOrder[i]
-          } cannot come before ${workflowOrder[i + 1]}`,
-        });
+      return res.status(400).json({
+        message: `Invalid step order: ${workflowOrder[i]} cannot come before ${
+          workflowOrder[i + 1]
+        }`,
+      });
     }
   }
   next();
@@ -121,11 +119,9 @@ const validateWorkflowVersion = async (req, res, next) => {
       return res.status(404).json({ message: "Workflow not found." });
 
     if (req.body.version && req.body.version !== workflow.version) {
-      return res
-        .status(400)
-        .json({
-          message: `Version mismatch. Latest version is ${workflow.version}.`,
-        });
+      return res.status(400).json({
+        message: `Version mismatch. Latest version is ${workflow.version}.`,
+      });
     }
 
     next();
