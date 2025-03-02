@@ -12,6 +12,7 @@ const UserSchema = new mongoose.Schema({
     enum: ["user", "admin", "exporter", "manufacturer"],
     default: "user",
   },
+  exporter_id: { type: String, default: null },
   status: { type: Boolean, default: true },
   createdDate: { type: Date, default: Date.now },
 });

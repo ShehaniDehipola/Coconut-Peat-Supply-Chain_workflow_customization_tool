@@ -9,6 +9,7 @@ const {
   deleteWorkflow,
   checkValidations,
   getWorkflowsByManufacturer,
+  getWorkflowVersions,
 } = require("../controllers/workflowController");
 const router = express.Router();
 
@@ -21,5 +22,6 @@ router.put("/:id/status", updateWorkflowStatus);
 router.delete("/:id", deleteWorkflow);
 router.post("/validate-workflow", checkValidations);
 router.get("/:manufacturerId", getWorkflowsByManufacturer);
+router.get("/version/:workflow_id", getWorkflowVersions);
 
 module.exports = router;

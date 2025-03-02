@@ -10,19 +10,19 @@ const {
 // create a workflow
 exports.createWorkflow = async (req, res) => {
   try {
-    // const { workflow_name, exporter_id, steps } = req.body;
+    const { exporter_id, steps } = req.body;
 
-    // // Validate that each step has a required amount
-    // for (let step of steps) {
-    //   if (
-    //     typeof step.required_amount !== "number" ||
-    //     step.required_amount < 0
-    //   ) {
-    //     return res
-    //       .status(400)
-    //       .json({ message: `Invalid required_amount for ${step.pluginName}` });
-    //   }
-    // }
+    // Validate that each step has a required amount
+    for (let step of steps) {
+      if (
+        typeof step.required_amount !== "number" ||
+        step.required_amount < 0
+      ) {
+        return res
+          .status(400)
+          .json({ message: `Invalid required_amount for ${step.pluginName}` });
+      }
+    }
 
     // validation checks before saving the workflow
     await validateWorkflowStructure(req, res, () => {});
@@ -31,7 +31,9 @@ exports.createWorkflow = async (req, res) => {
 
     const newWorkflow = new Workflow(req.body);
     const savedWorkflow = await newWorkflow.save();
-    res.status(201).json(savedWorkflow);
+    res
+      .status(201)
+      .json({ message: "Workflow created successfully!", savedWorkflow });
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
@@ -91,12 +93,19 @@ exports.getAWorkflow = async (req, res) => {
   }
 };
 
-// get all versions workflows by name
+// get all versions workflows by id
 exports.getWorkflowVersions = async (req, res) => {
   try {
-    const versions = await Workflow.find({
-      workflow_name: req.params.workflowName,
-    }).sort({ version: -1 });
+    const workflowId = req.params.workflow_id;
+
+    // Ensure it's a string before querying
+    if (typeof workflowId !== "string") {
+      return res.status(400).json({ error: "Invalid workflow_id format" });
+    }
+
+    const versions = await Workflow.find({ workflow_id: workflowId }).sort({
+      version: -1,
+    });
 
     if (!versions.length) {
       return res.status(404).json({ message: "No versions found" });
