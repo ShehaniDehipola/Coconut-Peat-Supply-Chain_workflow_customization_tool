@@ -18,6 +18,7 @@ import WorkflowDetailsPage from "./components/exporter/WorkflowDetails";
 import MainSidebar from "./components/sidebar/MainSidebar";
 import styled from "styled-components";
 import { useUser } from "./context/UserContext";
+import AllWorkflowsPage from "./components/exporter/AllWorkflowsPage";
 
 const ContentArea = styled.div`
   margin-left: 240px; /* Same as sidebar width */
@@ -49,6 +50,9 @@ function App() {
 
           {/* Route for the exporter workflow page */}
           <Route path="/exporter-dashboard" element={<WorkflowOverview />} />
+
+          {/* Route for the exporter workflow page */}
+          <Route path="/all-workflows" element={<AllWorkflowsPage />} />
 
           {/* Route for the exporter workflow track page */}
           <Route path="/progress" element={<WorkflowProgress />} />

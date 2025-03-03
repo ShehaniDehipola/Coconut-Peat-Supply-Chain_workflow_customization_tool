@@ -7,6 +7,13 @@ const Container = styled.div`
   margin: auto;
 `;
 
+const HeaderRow = styled.div`
+  display: flex;
+  justify-content: space-between; 
+  align-items: center;
+  margin-bottom: 20px;
+`;
+
 const WorkflowHeader = styled.h2`
   text-align: flex-start;
 `;
@@ -34,8 +41,14 @@ const StepContainer = styled.div`
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 `;
 
-/* Notes container */
-const NotesContainer = styled.div`
+const RightColumn = styled.div`
+  flex: 1;
+  display: flex;
+  flex-direction: column; /* ensures IoT container is on top, Comments below */
+  align-items: stretch;   /* makes them take the full width */
+`;
+
+const IoTDataContainer = styled.div`
   flex: 1;
   padding: 16px;
   background-color: rgba(45, 49, 66, 0.2);
@@ -43,14 +56,14 @@ const NotesContainer = styled.div`
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 `;
 
-const NotesLabel = styled.label`
+const IoTDataLabel = styled.label`
   font-size: 14px;
   font-weight: bold;
   margin-bottom: 4px;
   display: block;
 `;
 
-const NotesInput = styled.textarea`
+const IoTDataInput = styled.textarea`
   width: 90%;
   padding: 8px;
   border: 1px solid #ccc;
@@ -59,23 +72,76 @@ const NotesInput = styled.textarea`
   resize: vertical;
 `;
 
+const CommentsContainer = styled.div`
+  margin-top: 10px;  /* space between IoT container and this */
+  padding: 14px;
+  background-color: rgba(45, 49, 66, 0.1); 
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+`;
+
+const CommentsLabel = styled.label`
+  font-size: 14px;
+  font-weight: bold;
+  margin-top: 10px;
+  margin-bottom: 4px;
+  display: block;
+`;
+
+const CommentsInput = styled.textarea`
+  width: 90%;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  min-height: 70px;
+  resize: vertical;
+`;
+
+/* Notes container */
+// const NotesContainer = styled.div`
+//   flex: 1;
+//   padding: 16px;
+//   background-color: rgba(45, 49, 66, 0.2);
+//   border-radius: 8px;
+//   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+// `;
+
+// const NotesLabel = styled.label`
+//   font-size: 14px;
+//   font-weight: bold;
+//   margin-bottom: 4px;
+//   display: block;
+// `;
+
+// const NotesInput = styled.textarea`
+//   width: 90%;
+//   padding: 8px;
+//   border: 1px solid #ccc;
+//   border-radius: 4px;
+//   min-height: 70px;
+//   resize: vertical;
+// `;
+
 const StepHeader = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 10px;
+  padding: 8px;
+  border-radius: 4px;
 `;
 
-const StatusSelect = styled.select`
-  padding: 8px;
-  border: 1px solid #ccc;
+const StatusLabel = styled.div`
+  padding: 5px 10px;
   border-radius: 4px;
   font-weight: bold;
-
+  display: inline-block;
+  text-align: center;
+  min-width: 100px;
    ${(props) => {
-    switch (props.value) {
+    switch (props.status) {
       case 'Pending':
-        return 'background-color: #ffc107; color: black;';
+        return 'background-color: #ffc107; color: white;';
       case 'In Progress':
         return 'background-color: #17a2b8; color: white;';
       case 'Completed':
@@ -85,6 +151,45 @@ const StatusSelect = styled.select`
     }
   }};
 `;
+
+const ButtonGroup = styled.div`
+  display: flex;
+  justify-content: flex-end; /* moves buttons to the right */
+  gap: 10px; /* spacing between the two buttons */
+  margin-top: 10px; /* add some vertical spacing */
+`;
+
+const Button = styled.button`
+  margin: 5px;
+  padding: 8px 20px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+
+  &:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+  }
+
+  /* Styles for the 'Start' button (non-primary) */
+  ${(props) =>
+    !props.primary &&
+    `
+      background-color: #2D3142;
+      color: #fff;
+      border: none;
+    `}
+
+  /* Styles for the 'Next' button (primary) */
+  ${(props) =>
+    props.primary &&
+    `
+      background-color:rgb(255, 255, 255);
+      color: #2D3142;
+      border: 2px solid #2D3142;
+    `}
+`;
+
 
 const SubStep = styled.div`
   margin-left: 20px;
@@ -99,6 +204,30 @@ const SubStep = styled.div`
 
 const Checkbox = styled.input`
   margin-right: 10px;
+`;
+
+/* Progress Bar Styles */
+const ProgressBarWrapper = styled.div`
+  display: flex;
+  align-items: center;
+  padding: 20px;
+  border: 2px solid black;
+`;
+
+const ProgressBarContainer = styled.div`
+  width: 150px;        /* total width of bar */
+  height: 10px;        /* height of bar */
+  background-color: #2D3142;
+  border-radius: 5px;
+  overflow: hidden;
+  margin-right: 10px;  /* space for the percentage text */
+`;
+
+const ProgressBarFill = styled.div`
+  height: 100%;
+  background-color: #28a745;
+  width: ${(props) => props.progress}%;
+  transition: width 0.3s ease; 
 `;
 
 export const ManufacturerWorkflowPage = ({ workflow }) => {
@@ -147,28 +276,60 @@ export const ManufacturerWorkflowPage = ({ workflow }) => {
     });
   };
 
-  const handleStatusChange = (stepIndex, newStatus) => {
+  const handleStatusChange = (stepIndex, actionType) => {
     setSteps((prevSteps) => {
       const updatedSteps = [...prevSteps];
-      updatedSteps[stepIndex].status = newStatus;
+      if (actionType === 'start') {
+        updatedSteps[stepIndex].status = 'In Progress';
+      } else if (actionType === 'next') {
+        updatedSteps[stepIndex].status = 'Completed';
+        if (stepIndex + 1 < updatedSteps.length) {
+          updatedSteps[stepIndex + 1].status = 'Pending';
+        }
+      }
       return updatedSteps;
     });
   };
 
-  const handleNotesChange = (stepIndex, newNote) => {
+  const handleIoTDataChange = (stepIndex, newData) => {
     setSteps((prevSteps) => {
       const updatedSteps = [...prevSteps];
-      updatedSteps[stepIndex].notes = newNote;
+      updatedSteps[stepIndex].iotData = newData;
       return updatedSteps;
     });
   };
+
+  const handleCommentsChange = (stepIndex, newComments) => {
+    setSteps((prevSteps) => {
+      const updatedSteps = [...prevSteps];
+      updatedSteps[stepIndex].comments = newComments;
+      return updatedSteps;
+    });
+  };
+
+   // Calculate overall progress: # of completed steps vs total steps
+  const completedCount = steps.filter((step) => step.status === 'Completed').length;
+  const totalSteps = steps.length;
+  const overallProgress = totalSteps > 0 
+    ? Math.round((completedCount / totalSteps) * 100)
+    : 0;
 
   return (
     <Container>
-      <WorkflowHeader>{workflow?.name || 'Workflow Progress'}</WorkflowHeader>
-      <p>Description: {workflow?.description}</p>
-      <p>Assigned by: {workflow?.exporter}</p>
-      <p>Date of Creation: {workflow?.dateSent}</p>
+      <HeaderRow>
+        <WorkflowHeader>{workflow?.name || 'Workflow Progress'}</WorkflowHeader>
+        {/* Progress Bar */}
+        <ProgressBarWrapper>
+          <ProgressBarContainer>
+            <ProgressBarFill progress={overallProgress} />
+          </ProgressBarContainer>
+          <span>{overallProgress}%</span>
+        </ProgressBarWrapper>
+      </HeaderRow>
+      <p>Assigned Date: {workflow?.description}</p>
+      <p>Expoter ID: {workflow?.exporter}</p>
+      <p>Deadline: {workflow?.dateSent}</p>
+        
 
       <h3>Workflow Steps and Sub-Steps</h3>
       {steps.map((step, index) => (
@@ -177,30 +338,50 @@ export const ManufacturerWorkflowPage = ({ workflow }) => {
           <StepContainer>
             <StepHeader>
               <h3>{step.name}</h3>
-              <StatusSelect value={step.status} onChange={(e) => handleStatusChange(index, e.target.value)}>
-                <option style={{ backgroundColor: "white", fontColor: "black" } } value="Pending">Pending</option>
-                <option style={{ backgroundColor: "white", fontColor: "black" } } value="In Progress">In Progress</option>
-                <option style={{ backgroundColor: "white", fontColor: "black" } } value="Completed">Completed</option>
-              </StatusSelect>
+              <StatusLabel status={step.status}>{step.status}</StatusLabel>
             </StepHeader>
 
             {step.subSteps.map((subStep, subIndex) => (
               <SubStep key={subIndex} completed={subStep.completed}>
-                <Checkbox type="checkbox" checked={subStep.completed} onChange={() => handleSubStepChange(index, subIndex)} />
+                <Checkbox type="checkbox" checked={subStep.completed} />
                 {subStep.name}
               </SubStep>
             ))}
+            <ButtonGroup>
+            <Button
+              onClick={() => handleStatusChange(index, 'start')}
+              disabled={step.status !== 'Pending'}
+            >
+              Start
+            </Button>
+            <Button
+              primary
+              onClick={() => handleStatusChange(index, 'next')}
+              disabled={step.status !== 'In Progress'}
+            >
+              Next
+            </Button>
+            </ButtonGroup>
           </StepContainer>
 
-          {/* Notes Section (Next to StepContainer) */}
-          <NotesContainer>
-            <NotesLabel>Notes (Optional):</NotesLabel>
-            <NotesInput
-              value={step.notes}
-              onChange={(e) => handleNotesChange(index, e.target.value)}
-              placeholder="Write any special instructions or comments for this step..."
+          <RightColumn>
+          <IoTDataContainer>
+            <IoTDataLabel>IoT Data Readings:</IoTDataLabel>
+            <IoTDataInput
+              value={step.iotData}
+              onChange={(e) => handleIoTDataChange(index, e.target.value)}
+              placeholder="Enter IoT sensor data readings..."
             />
-          </NotesContainer>
+            </IoTDataContainer>
+            <CommentsContainer>
+             <CommentsLabel>Add Comments:</CommentsLabel>
+            <CommentsInput
+              value={step.comments}
+              onChange={(e) => handleCommentsChange(index, e.target.value)}
+              placeholder="Enter additional comments..."
+            />
+            </CommentsContainer>
+          </RightColumn>
         </StepWrapper>
       ))}
     </Container>

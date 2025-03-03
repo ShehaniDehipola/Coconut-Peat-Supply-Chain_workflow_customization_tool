@@ -176,7 +176,7 @@ const MainSidebar = ({ role }) => {
         {role === "exporter" && (
           <>
           <NavItem onClick={() => navigate("/exporter-dashboard")}><Icon src={dashboardIcon} alt="Dashboard" />Dashboard</NavItem>
-          <NavItem onClick={() => navigate("/workflows")}><Icon src={workflowIcon} alt="Workflow" />Workflows</NavItem>
+          <NavItem onClick={() => navigate("/all-workflows")}><Icon src={workflowIcon} alt="Workflow" />Workflows</NavItem>
             <NavItem onClick={() => navigate("/manufacturers")}><Icon src={manufacturerIcon} alt="Manufacturer" />Manufacturers</NavItem>
             <NavItem onClick={() => navigate("/reports")}><Icon src={reportsIcon} alt="Report" />Reports & Analytics</NavItem>
         <NavItem onClick={() => navigate("/settings")}><Icon src={settingsIcon} alt="Settings" />Settings</NavItem>

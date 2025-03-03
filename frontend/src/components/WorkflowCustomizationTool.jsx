@@ -1,178 +1,8 @@
-// import React, { useState } from 'react';
-// import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
-// import Sidebar from './sidebar/Sidebar';
-// import Canvas from './Canvas';
-// import styled from 'styled-components';
-import { v4 as uuid4 } from 'uuid'
-
-// // Main container to arrange sidebar and canvas
-// const ToolContainer = styled.div`
-//   display: flex;
-//   height: 100vh;
-// `;
-
-// // Styled Components
-// const Container = styled.div`
-//   display: flex;
-//   justify-content: center;
-//   margin-top: 20px;
-// `;
-
-// const Column = styled.div`
-//   margin: 0 20px;
-//   padding: 10px;
-//   width: 250px;
-//   background-color: #f0f0f0;
-//   border: 1px solid #ccc;
-//   border-radius: 5px;
-//   min-height: 300px;
-// `;
-
-// const Item = styled.div`
-//   padding: 10px;
-//   margin-bottom: 10px;
-//   background-color: ${(props) => (props.isFixed ? "#ddd" : "#fff")};
-//   border: 1px solid #ccc;
-//   border-radius: 5px;
-//   cursor: grab;
-// `;
-
-// // Main component for the workflow customization tool
-// const WorkflowCustomizationTool = () => {
-
-//   // const plugins = [
-//   //   { id: 'A', name: 'Grading' },
-//   //   { id: 'B', name: 'Cutting' },
-//   //   { id: 'C', name: 'Washing' },
-//   // ];
-
-//   //  const stepsArray = [
-//   //   { id: 'SA', name: 'Grading' },
-//   // ];
-//   // const [steps, setSteps] = useState([]);
-
-//   // // Handle the end of a drag event
-//   // const onDragEnd = (result) => {
-//   //   const { source, destination } = result;
-
-//   //   console.log("source:", source);
-//   //   console.log("destination:", destination);
-
-//   //   // If dropped outside the droppable area, return
-//   //   if (!destination) return;
-
-//   //   // Handle dragging from the sidebar to the canvas
-//   //   if (source.droppableId === 'sidebar' && destination.droppableId === 'canvas') {
-//   //     const newStep = {
-//   //       id: uuid4(),
-//   //       name: plugins[source.index].name,
-//   //     };
-
-//   //     // Add the new step to the list of steps
-//   //     setSteps((prevSteps) => [...prevSteps, newStep]);
-//   //     }
-      
-//   //     // Moving within the canvas (reordering)
-//   // if (source.droppableId === 'canvas' && destination.droppableId === 'canvas') {
-//   //   const updatedSteps = Array.from(steps);
-//   //   const [movedStep] = updatedSteps.splice(source.index, 1); // Remove the dragged step
-//   //   updatedSteps.splice(destination.index, 0, movedStep); // Insert it at the new position
-
-//   //   // Update the state with the reordered steps
-//   //   setSteps(updatedSteps);
-//   // }
-//   // };
-
-//   const [columns, setColumns] = useState({
-//     column1: {
-//       name: "Fixed Items",
-//       items: [
-//         { id: "item-1", content: "Fixed Item 1" },
-//         { id: "item-2", content: "Fixed Item 2" },
-//         { id: "item-3", content: "Fixed Item 3" },
-//       ],
-//     },
-//     column2: {
-//       name: "Drop Area",
-//       items: [],
-//     },
-//   });
-
-//   const onDragEnd = (result) => {
-//     const { source, destination } = result;
-
-//     console.log('source', source);
-//     console.log('destination', destination);
-
-//     // If dropped outside any list
-//     if (!destination) return;
-
-//     const sourceColumn = columns[source.droppableId];
-//     const destinationColumn = columns[destination.droppableId];
-
-//     // If dragging within the same column, do nothing
-//     if (source.droppableId === destination.droppableId) return;
-
-//     // Copy the item from the source column
-//     const draggedItem = sourceColumn.items[source.index];
-
-//     // Add the copied item to the destination column
-//     const updatedDestinationItems = [...destinationColumn.items, draggedItem];
-
-//     // Update the state for the destination column
-//     setColumns({
-//       ...columns,
-//       [destination.droppableId]: {
-//         ...destinationColumn,
-//         items: updatedDestinationItems,
-//       },
-//     });
-//   };
-
-//   return (
-//     <DragDropContext onDragEnd={onDragEnd}>
-//       <Container>
-//         {/* Render Columns */}
-//         {Object.entries(columns).map(([columnId, column]) => (
-//           <Droppable key={columnId} droppableId={columnId}>
-//             {(provided) => (
-//               <Column ref={provided.innerRef} {...provided.droppableProps}>
-//                 <h3>{column.name}</h3>
-//                 {column.items.map((item, index) => (
-//                   <Draggable
-//                     key={item.id}
-//                     draggableId={item.id}
-//                     index={index}
-//                     isDragDisabled={columnId === "column1"} // Disable drag within Column 1
-//                   >
-//                     {(provided) => (
-//                       <Item
-//                         ref={provided.innerRef}
-//                         {...provided.draggableProps}
-//                         {...provided.dragHandleProps}
-//                         isFixed={columnId === "column1"}
-//                       >
-//                         {item.content}
-//                       </Item>
-//                     )}
-//                   </Draggable>
-//                 ))}
-//                 {provided.placeholder}
-//               </Column>
-//             )}
-//           </Droppable>
-//         ))}
-//       </Container>
-//     </DragDropContext>
-//   );
-// };
-
-// export default WorkflowCustomizationTool;
-
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import styled from "styled-components";
+import { v4 as uuidv4 } from "uuid";
 
 // Styled Components
 const AppContainer = styled.div`
@@ -362,21 +192,10 @@ const Button = styled.button`
 
 const WorkflowCustomizationTool = () => {
   const navigate = useNavigate();
+  const location = useLocation(); 
 
-const buildWorkflow = () => {
-  if (plugins.column2.items.length === 0) {
-    alert("You must add at least one step.");
-    return;
-  }
-
-  const stepsData = plugins.column2.items.map((item, index) => ({
-    pluginName: pluginsData[item.id]?.name || "Unknown Plugin",
-    order: index + 1,
-    required_amount: pluginsData[item.id]?.required_amount || 0,
-  }));
-
-  navigate("/workflow-details", { state: { steps: stepsData } });
-};
+  // Load previous workflow if editing
+  const [workflowID, setWorkflowID] = useState("");
   const [plugins, setPlugins] = useState({
     column1: {
       name: "Plugins",
@@ -412,6 +231,47 @@ const buildWorkflow = () => {
     inputs: [{ label: "EC Level:", parameter: "targetECLevel" }],
   },
   };
+
+  useEffect(() => {
+    if (location.state?.workflow_id) {
+      // If editing, load existing workflow
+      setWorkflowID(location.state.workflow_id);
+      setPlugins((prev) => ({
+        ...prev,
+        column2: {
+          ...prev.column2,
+          items: location.state.steps.map((step, index) => ({
+            id: `plugin-${index + 1}`,
+            content: step.pluginName,
+            required_amount: step.required_amount,
+          })),
+        },
+      }));
+    } else {
+      // Creating a new workflow: Only generate an ID if not already set
+      setWorkflowID((prevID) => prevID || `WF-${uuidv4().split("-")[0]}`);
+    }
+  }, [location.state]);
+
+const buildWorkflow = () => {
+  if (plugins.column2.items.length === 0) {
+    alert("You must add at least one step.");
+    return;
+  }
+
+  const stepsData = plugins.column2.items.map((item, index) => ({
+    pluginName: pluginsData[item.id]?.name || "Unknown Plugin",
+    order: index + 1,
+    required_amount: pluginsData[item.id]?.required_amount || 0,
+  }));
+
+  // Debugging Logs
+  console.log("Navigating to workflow-details with:");
+  console.log("Workflow ID:", workflowID);
+  console.log("Steps:", stepsData);
+
+  navigate("/workflow-details", { state: { workflow_id: workflowID, steps: stepsData }});
+};
 
   const onDragEnd = (result) => {
     const { source, destination } = result;
@@ -468,8 +328,10 @@ const buildWorkflow = () => {
         pluginName: pluginsData[item.id]?.name || "Unknown Plugin",
         order: index + 1,
         required_amount: pluginsData[item.id]?.required_amount || 0,
+        
       })),
     };
+
 
     try {
       const response = await fetch("http://localhost:5000/api/workflow/validate-workflow", {
@@ -617,7 +479,7 @@ const buildWorkflow = () => {
         <Canvas>
           <CanvasHeadingContainer>
             <CanvasHeading>{plugins.column2.name}</CanvasHeading>
-            <BuildWorkflowButton onClick={validateWorkflow}>Build Workflow</BuildWorkflowButton>
+            <BuildWorkflowButton onClick={buildWorkflow}>{location.state?.workflow_id ? "Update Workflow" : "Build Workflow"}</BuildWorkflowButton>
           </CanvasHeadingContainer>
           <Droppable droppableId="column2">
             {(provided) => (

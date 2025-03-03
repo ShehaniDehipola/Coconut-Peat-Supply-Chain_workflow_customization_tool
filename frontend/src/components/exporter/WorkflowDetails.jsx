@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import axios from "axios";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useUser } from "../../context/UserContext";
 
 // Styled Components
@@ -9,9 +9,9 @@ const PageContainer = styled.div`
   display: flex;
   justify-content: space-between;
   width: 90%;
-  height: 80vh; /* Full screen height */
-  margin: 60px; /* Small margin to prevent full edge */
-  padding: 50px;
+  height: 80vh;
+  margin: 60px auto;
+  padding: 20px;
   background: rgba(45, 49, 66, 0.1);
   box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
   border-radius: 8px;
@@ -23,120 +23,46 @@ const PageContainer = styled.div`
   }
 `;
 
-const LeftSection = styled.div`
-  width: 50%;
-  padding-right: 10px;
+// Version Control (Larger)
+const LeftContainer = styled.div`
+  width: 75%;
+  padding: 20px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
+`;
+
+// Workflow Details (Smaller)
+const RightContainer = styled.div`
+  width: 25%;
+  padding: 20px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
+`;
+
+// Tab Navigation for Versions
+const TabsContainer = styled.div`
   display: flex;
-  flex-direction: column;
-  justify-content: flex-start; /* Aligns buttons at the bottom */
-
-  @media (max-width: 768px) {
-    padding-right: 0;
-  }
-`;
-
-const RightSection = styled.div`
-  width: 50%;
-  padding-left: 10px;
-  border-left: 2px solid #d3d2d0;
-
-  @media (max-width: 768px) {
-    padding-left: 0;
-    border-left: none;
-    margin-top: 20px;
-  }
-`;
-
-const Title = styled.h2`
+  gap: 10px;
   margin-bottom: 10px;
 `;
 
-const VersionSelector = styled.select`
-  padding: 8px;
-  width: 100%;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  margin-top: 10px;
-`;
-
-const ChangeLogContainer = styled.div`
-  margin-top: 20px;
-  padding: 10px;
-  background: #f9f9f9;
-  border-radius: 5px;
-  max-height: 200px;
-  overflow-y: auto;
-`;
-
-const ChangeLogItem = styled.div`
-  margin-bottom: 10px;
-  padding: 8px;
-  background: #eef;
-  border-radius: 5px;
-  font-size: 14px;
-`;
-
-const AssignManufacturerButton = styled.button`
-  padding: 10px;
-  width: 100%;
-  background: #2D3142;
-  color: white;
+const Tab = styled.button`
+  padding: 8px 12px;
   border: none;
   border-radius: 5px;
   cursor: pointer;
-  margin-top: 15px;
+  background: ${(props) => (props.active ? "#2D3142" : "#ccc")};
+  color: ${(props) => (props.active ? "white" : "black")};
 
   &:hover {
-    background: #1F2532;
+    background: #1f2532;
+    color: white;
   }
 `;
 
-const InputField = styled.input`
-  width: 80%;
-  padding: 8px;
-  margin-bottom: 10px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-`;
-
-const Dropdown = styled.select`
-  width: 80%;
-  padding: 8px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  display: inline-block;
-`;
-
-const StatusLabel = styled.span`
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-weight: bold;
-  color: white;
-  background-color: ${(props) => {
-    switch (props.status) {
-      case 'Pending':
-        return '#ffc107'; // Yellow
-      case 'In Progress':
-        return '#17a2b8'; // Blue
-      case 'Completed':
-        return '#28a745'; // Green
-      default:
-        return '#6c757d'; // Grey
-    }
-  }};
-`;
-
-const ButtonContainer = styled.div`
-  display: flex;
-  justify-content: space-between;
-  margin-top: 20px;
-
-  @media (max-width: 768px) {
-    flex-direction: column;
-    gap: 10px;
-  }
-`;
-
+// Buttons
 const Button = styled.button`
   flex: 1;
   padding: 10px;
@@ -151,40 +77,81 @@ const Button = styled.button`
   &:hover {
     background: ${(props) => props.hoverColor || "#1F2532"};
   }
+`;
 
-  @media (max-width: 768px) {
-    width: 100%;
+const Dropdown = styled.select`
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 16px;
+  background: white;
+  color: black;
+  cursor: pointer;
+  
+  &:focus {
+    outline: none;
+    border-color: #007bff;
   }
+`;
+
+const DropdownOption = styled.option`
+  font-size: 16px;
+  color: black;
+  background: white;
 `;
 
 const WorkflowDetailsPage = ({ }) => {
   const { user } = useUser();
-  const [workflowName, setWorkflowName] = useState("");
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const [workflowID, setWorkflowID] = useState(""); // Auto-generated ID
   const [status, setStatus] = useState("pending"); // Default status
   const [version, setVersion] = useState(1); // Default version
   const [manufacturers, setManufacturers] = useState([]);
   const [selectedManufacturer, setSelectedManufacturer] = useState("");
-  const [versions, setVersions] = useState([]);
   const [selectedVersion, setSelectedVersion] = useState(null);
   const [changeLog, setChangeLog] = useState([]);
+  const [workflowVersions, setWorkflowVersions] = useState([]); // Store workflow versions locally
 
-    
-  const location = useLocation();
+  console.log("Received in WorkflowDetailsPage:");
+
   const steps = location.state?.steps || [];
+  const workflow_id = location.state?.workflow_id || "N/A"; // Retrieve passed ID
+
+  console.log("Workflow ID:", workflow_id);
+  console.log("Steps:", steps);
 
   console.log("User data:", user);
 
   useEffect(() => {
-    axios.get(`/api/workflow/versions/${workflowName}`)
-      .then(response => {
-        setVersions(response.data);
-        setSelectedVersion(response.data[0]); // Default to latest version
-      })
-      .catch(error => console.error(error));
-  }, [workflowName]);
+  if (location.state?.workflow_id) {
+    setWorkflowID(location.state.workflow_id); // Ensure workflowID is set
+  }
+  console.log("Workflow ID from state:", location.state?.workflow_id); // Debugging log
+}, [location.state?.workflow_id]);
+
+  useEffect(() => {
+    if (workflow_id !== "N/A") {
+      setWorkflowID(workflow_id);
+      
+      // If this workflow ID already exists, increase version
+      if (workflowVersions.length > 0) {
+        setVersion(workflowVersions.length + 1);
+      } else {
+        setVersion(1);
+      }
+
+      setWorkflowVersions((prevVersions) => [
+        ...prevVersions,
+        { version, steps },
+      ]);
+    }
+  }, [workflow_id]);
 
   const fetchChangeLog = () => {
-    axios.get(`/api/workflows/changelog/${workflowName}`)
+    axios.get(`/api/workflows/changelog/${workflowID}`)
       .then(response => {
         setChangeLog(response.data);
       })
@@ -194,14 +161,14 @@ const WorkflowDetailsPage = ({ }) => {
   useEffect(() => {
     axios.get("http://localhost:5000/api/manufacturers/all")
       .then(response => {
-      setManufacturers(response.data); // Store manufacturers in state
+        setManufacturers(response.data); // Store manufacturers in state
+        console.log("manufacturers: ", manufacturers)
     })
       .catch(error => console.error(error));
       }, []);
     
-    const handleEditWorkflow = () => {
-    alert("Edit Workflow Clicked!");
-    // Implement the edit workflow functionality
+  const handleEditWorkflow = () => {
+      navigate("/new-workflow", { state: { workflow_id: workflowID, steps: selectedVersion?.steps || [] } });
   };
 
   const handleDeleteWorkflow = () => {
@@ -216,25 +183,31 @@ const WorkflowDetailsPage = ({ }) => {
 
     const handleConfirmWorkflow = async () => {
         
-    // if (!user || !user.exporter_id) {
-    // alert("User not logged in or exporter_id missing.");
-    // return;
-    // }
+    console.log("Debugging handleConfirmWorkflow:");
+    console.log("workflowID:", workflowID);
+    console.log("steps:", steps);
+    console.log("selectedManufacturer:", selectedManufacturer);
+    console.log("user.exporter_id:", user?.exporter_id);
         
-    if (!workflowName || steps.length === 0 || !selectedManufacturer) {
+    if (!workflowID || steps.length === 0 || !selectedManufacturer) {
       alert("Please fill all fields before confirming.");
       return;
-    }
+      }
+      
+      const latestManufacturer = selectedManufacturer;
+    console.log("Using latestManufacturer:", latestManufacturer);
 
     const workflowData = {
-      workflow_name: workflowName,
-      exporter_id: "exp-001",
-      manufacturer_id: selectedManufacturer,
+      workflow_id: workflowID, // Auto-generated ID
+      exporter_id: user.exporter_id,
+      manufacturer_id: latestManufacturer,
       steps: steps,
-      status: "pending",
-      version: 1,
+      status: status,
+      version: version,
     };
 
+      
+      console.log("Submitting Workflow Data:", workflowData);
     try {
       await axios.post("http://localhost:5000/api/workflow/", workflowData);
       alert("Workflow Created Successfully!");
@@ -246,97 +219,67 @@ const WorkflowDetailsPage = ({ }) => {
 
   return (
     <PageContainer>
-      {/* Left Side - Workflow Details */}
-      <LeftSection>
-        <Title>Workflow Details</Title>
-        <label>Workflow Name:</label>
-        <InputField 
-          type="text" 
-          value={workflowName} 
-          onChange={(e) => setWorkflowName(e.target.value)} 
-          placeholder="Enter Workflow Name"
-        />
+      {/* Left Side - Version Control */}
+      <LeftContainer>
+        <h2>Version Control</h2>
 
-        <label>Status:</label>
-        <InputField type="text" value={status} readOnly />
+        {/* Tabs for Each Version */}
+        <TabsContainer>
+            <Tab>
+              Version {version}
+            </Tab>
+        </TabsContainer>
 
-        <label>Version:</label>
-        <InputField type="number" value={version} readOnly />
-
-        <label>Steps:</label>
-        <ul>
-          {steps.length > 0 ? (
-            steps.map((step, index) => (
-              <li key={index}>
-                {step.pluginName} - Required: {step.required_amount}
-              </li>
-            ))
-          ) : (
-            <p>No steps added.</p>
-          )}
-        </ul>
-
-        <label>Assign Manufacturer:</label>
-        <Dropdown 
-  value={selectedManufacturer} 
-  onChange={(e) => setSelectedManufacturer(e.target.value)}
->
-  <option value="">Select a Manufacturer</option>
-  {manufacturers.length > 0 ? (
-    manufacturers.map((manu) => (
-      <option key={manu.id} value={manu.id}>
-        {manu.name}
-      </option>
+        {/* Selected Version Details */}
+        <div>
+          <p><b>Steps:</b></p>
+          <ul>
+            {steps?.length > 0 ? (
+    steps.map((step, index) => (
+      <li key={index}>{step.pluginName} - Required: {step.required_amount}</li>
     ))
   ) : (
-    <option disabled>Loading manufacturers...</option>
+    <p>No steps available.</p>
   )}
-</Dropdown>
+          </ul>
+        </div>
 
-              {/* <AssignManufacturerButton onClick={assignManufacturer}>Assign Manufacturer</AssignManufacturerButton> */}
-              
-              {/* Buttons at the bottom of Left Section */}
-        <ButtonContainer>
-          <Button onClick={handleEditWorkflow} bgColor="#4CAF50" hoverColor="#388E3C">
-            Edit Workflow
-          </Button>
-          <Button onClick={handleDeleteWorkflow} bgColor="#D32F2F" hoverColor="#B71C1C">
-            Delete
-          </Button>
-          <Button onClick={handleConfirmWorkflow} bgColor="#2D3142" hoverColor="#1565C0">
-            Confirm
-          </Button>
-        </ButtonContainer>
-      </LeftSection>
+        {/* Version Control Actions */}
+        <div>
+          <Button bgColor="#4CAF50" hoverColor="#388E3C" onClick={handleEditWorkflow}>Edit Version</Button>
+          <Button bgColor="#D32F2F" hoverColor="#B71C1C">Delete Version</Button>
+          <Button bgColor="#2D3142" hoverColor="#1565C0">Confirm</Button>
+        </div>
+      </LeftContainer>
 
-      {/* Right Side - Versions & Change Log */}
-      <RightSection>
-        <Title>Version Control</Title>
-        <label>Select Version:</label>
-        <VersionSelector onChange={(e) => {
-          const selected = versions.find(v => v.version === parseInt(e.target.value));
-          setSelectedVersion(selected);
-        }}>
-          {versions.map((workflow) => (
-            <option key={workflow._id} value={workflow.version}>
-              Version {workflow.version}
-            </option>
+      {/* Right Side - Workflow Details */}
+      <RightContainer>
+        <h2>Workflow Details</h2>
+
+        <label>Workflow ID:</label>
+        <p><b>{workflow_id || "N/A"}</b></p>
+
+        {/* <label>Exporter ID:</label>
+        <p><b>{exporter_id || "Generating..."}</b></p> */}
+
+        <label>Status:</label>
+        <p>{status}</p>
+
+        <label>Assign Manufacturer:</label>
+        <select value={selectedManufacturer} onChange={(e) => {
+      console.log("Manufacturer Selected (user_id):", e.target.value);
+      setSelectedManufacturer(e.target.value);
+  }}>
+          <DropdownOption value="">Select a Manufacturer</DropdownOption>
+          {manufacturers.map((manu) => (
+            <DropdownOption key={manu.user_id} value={manu.user_id}>{manu.username}</DropdownOption>
           ))}
-        </VersionSelector>
+        </select>
 
-        <button onClick={fetchChangeLog} style={{ marginTop: "10px", padding: "8px", background: "#1976D2", color: "white", border: "none", borderRadius: "5px", cursor: "pointer" }}>
-          View Change Log
-        </button>
-
-        <ChangeLogContainer>
-          <h4>Change Log:</h4>
-          {changeLog.map((log, index) => (
-  <ChangeLogItem key={index}>
-    <strong>Version {log.version}:</strong> {log.changes}
-  </ChangeLogItem>
-))}
-        </ChangeLogContainer>
-      </RightSection>
+        <Button bgColor="#2D3142" onClick={handleConfirmWorkflow}>
+          Send to Manufacturer
+        </Button>
+      </RightContainer>
     </PageContainer>
   );
 };
