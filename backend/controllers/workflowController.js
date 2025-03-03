@@ -235,11 +235,15 @@ exports.getWorkflowsByManufacturer = async (req, res) => {
 
     const workflows = await Workflow.find({ manufacturer_id: manufacturerId });
 
-    if (!workflows.length) {
-      return res
-        .status(404)
-        .json({ message: "No workflows found for this manufacturer" });
+    if (!Array.isArray(workflows) || workflows.length === 0) {
+      return res.status(200).json([]); // Return empty array instead of an object
     }
+
+    // if (!workflows.length) {
+    //   return res
+    //     .status(404)
+    //     .json({ message: "No workflows found for this manufacturer" });
+    // }
 
     res.status(200).json(workflows);
   } catch (err) {

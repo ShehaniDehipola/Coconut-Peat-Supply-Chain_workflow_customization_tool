@@ -36,7 +36,12 @@ exports.loginUser = async (req, res) => {
 
     // Include role in JWT payload
     const token = jwt.sign(
-      { id: user._id, role: user.role, exporter_id: user.exporter_id },
+      {
+        id: user._id,
+        role: user.role,
+        exporter_id: user.exporter_id,
+        user_id: user.user_id,
+      },
       process.env.JWT_SECRET,
       { expiresIn: "1h" }
     );
@@ -49,6 +54,7 @@ exports.loginUser = async (req, res) => {
         email: user.email,
         role: user.role,
         exporter_id: user.exporter_id,
+        user_id: user.user_id,
       },
     });
   } catch (err) {
