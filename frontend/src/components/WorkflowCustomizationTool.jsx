@@ -203,6 +203,9 @@ const WorkflowCustomizationTool = () => {
         { id: "plugin-1", content: "Grading" },
         { id: "plugin-2", content: "Cutting" },
         { id: "plugin-3", content: "Washing" },
+        { id: "plugin-4", content: "Drying" },
+        { id: "plugin-5", content: "Packaging" },
+        { id: "plugin-6", content: "Delivering" },
       ],
     },
     column2: {
@@ -229,6 +232,22 @@ const WorkflowCustomizationTool = () => {
     name: "Washing",
     steps: ["Fill Tanks r", "Wash for 24 Hours", "Wash for Another 24 Hours", "Final Wash for 12 Hours", "Check EC Level"],
     inputs: [{ label: "EC Level:", parameter: "targetECLevel" }],
+    },
+  "plugin-4": {
+    name: "Drying",
+    steps: ["Fill Tanks r", "Wash for 24 Hours", "Wash for Another 24 Hours", "Final Wash for 12 Hours", "Check EC Level"],
+    inputs: [{ label: "EC Level:", parameter: "targetECLevel" }],
+    },
+  "plugin-6": {
+    name: "Packaging",
+    steps: ["Fill Tanks r", "Wash for 24 Hours", "Wash for Another 24 Hours", "Final Wash for 12 Hours", "Check EC Level"],
+    inputs: [{ label: "EC Level:", parameter: "targetECLevel" }],
+    }
+  ,
+  "plugin-7": {
+    name: "Delivering",
+    steps: ["Fill Tanks r", "Wash for 24 Hours", "Wash for Another 24 Hours", "Final Wash for 12 Hours", "Check EC Level"],
+    inputs: [{ label: "EC Level:", parameter: "targetECLevel" }],
   },
   };
 
@@ -253,24 +272,77 @@ const WorkflowCustomizationTool = () => {
     }
   }, [location.state]);
 
-const buildWorkflow = () => {
+// const buildWorkflow = () => {
+//   if (plugins.column2.items.length === 0) {
+//     alert("You must add at least one step.");
+//     return;
+//   }
+
+//   const stepsData = plugins.column2.items.map((item, index) => ({
+//     pluginName: pluginsData[item.id]?.name || "Unknown Plugin",
+//     order: index + 1,
+//     required_amount: pluginsData[item.id]?.required_amount || 0,
+//   }));
+
+//   // Debugging Logs
+//   console.log("Navigating to workflow-details with:");
+//   console.log("Workflow ID:", workflowID);
+//   console.log("Steps:", stepsData);
+
+//   const payload = { steps: stepsData };
+
+//   navigate("/workflow-details", { state: { workflow_id: workflowID, steps: stepsData }});
+  // };
+  
+  const buildWorkflow = async () => {
   if (plugins.column2.items.length === 0) {
     alert("You must add at least one step.");
     return;
   }
 
+  // Build steps data from the canvas items
   const stepsData = plugins.column2.items.map((item, index) => ({
     pluginName: pluginsData[item.id]?.name || "Unknown Plugin",
     order: index + 1,
     required_amount: pluginsData[item.id]?.required_amount || 0,
   }));
 
-  // Debugging Logs
-  console.log("Navigating to workflow-details with:");
   console.log("Workflow ID:", workflowID);
   console.log("Steps:", stepsData);
 
-  navigate("/workflow-details", { state: { workflow_id: workflowID, steps: stepsData }});
+  const payload = { steps: stepsData };
+
+  // Check if we are editing an existing workflow (i.e. workflow_id is present)
+  if (location.state?.workflow_id) {
+    try {
+      const response = await fetch(
+        `http://localhost:5000/api/workflow/${workflowID}`,
+        {
+          method: "PUT", // or PATCH depending on your backend implementation
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to update workflow");
+      }
+
+      const data = await response.json();
+      console.log("Update successful:", data);
+      // After successful update, navigate to the details page
+      navigate("/workflow-details", {
+        state: { workflow_id: workflowID, steps: stepsData },
+      });
+    } catch (error) {
+      console.error("Error updating workflow:", error);
+      alert(`Error updating workflow: ${error.message}`);
+    }
+  } else {
+    // In create mode: navigate to the workflow-details page (where you might show a preview or further options)
+    navigate("/workflow-details", { state: { workflow_id: workflowID, steps: stepsData } });
+  }
 };
 
   const onDragEnd = (result) => {
@@ -359,103 +431,11 @@ const buildWorkflow = () => {
   };
 
   return (
-//     <DragDropContext onDragEnd={onDragEnd}>
-//       <AppContainer>
-//         {/* Sidebar */}
-//         <Sidebar>
-//           {/* Add Plugin Button */}
-//       <AddPluginButton onClick={() => navigate('/add-plugin')}>Add Plugin</AddPluginButton>
-//           <Droppable droppableId="column1">
-//             {(provided) => (
-//               <Column ref={provided.innerRef} {...provided.droppableProps}>
-//                 <h3>{plugins.column1.name}</h3>
-//                 {plugins.column1.items.map((item, index) => (
-//                   <Draggable key={item.id} draggableId={item.id} index={index}>
-//                     {(provided) => (
-//                       <Item
-//                         ref={provided.innerRef}
-//                         {...provided.draggableProps}
-//                         {...provided.dragHandleProps}
-//                         isFixed
-//                       >
-//                         {item.content}
-//                       </Item>
-//                     )}
-//                   </Draggable>
-//                 ))}
-//                 {provided.placeholder}
-//               </Column>
-//             )}
-//           </Droppable>
-//         </Sidebar>
-
-//         {/* Workflow Canvas */}
-//         <Canvas>
-//           {/* Heading with "Build Workflow" button on the right */}
-//           <CanvasHeadingContainer>
-//             <CanvasHeading>{plugins.column2.name}</CanvasHeading>
-//             <BuildWorkflowButton onClick={() => navigate("/exporter-dashboard")}>
-//               Build Workflow
-//             </BuildWorkflowButton>
-//           </CanvasHeadingContainer>
-//           <Droppable droppableId="column2">
-//             {(provided) => (
-//               <ColumnCanvas ref={provided.innerRef} {...provided.droppableProps}>
-//                 {plugins.column2.items.map((item, index) => (
-//                   <PluginCard>
-//   <div
-//     ref={provided.innerRef}
-//     {...provided.draggableProps}
-//     style={{ display: "flex", justifyContent: "space-between" }}
-//   >
-//     <strong {...provided.dragHandleProps}>{pluginsData[item.id]?.name}</strong>
-//     <DropdownIcon
-//       expanded={expandedPlugins[item.id]}
-//       onClick={() => toggleExpand(item.id)}
-//     >
-//       ▼
-//                       </DropdownIcon>
-//   </div>
-//   {expandedPlugins[item.id] && (
-//     <ExpandedSection>
-//       {/* <h4>Steps:</h4> */}
-//       {pluginsData[item.id].steps.map((step, idx) => (
-//         <Step key={idx}>{step}</Step>
-//       ))}
-//       {/* <h4>Inputs:</h4> */}
-//       {pluginsData[item.id].inputs.map((input, idx) => (
-//         <InputField key={idx}>
-//           <label>{input.label}</label>
-//           <input type="text" />
-//         </InputField>
-//       ))}
-//                         <Button onClick={() => updatePluginData(item.id)}>Update</Button>
-                  
-//     </ExpandedSection>
-//                     )}
-//                     {/* Show delete button only when not expanded */}
-//                     {/* {!expandedPlugins[item.id] && (
-//                       <Button delete onClick={() => deletePlugin(item.id)}>
-//                         Delete
-//                       </Button>
-//                     )} */}
-                    
-// </PluginCard>
-
-//                 ))}
-//                 {provided.placeholder}
-//               </ColumnCanvas>
-//             )}
-//           </Droppable>
-//         </Canvas>
-//       </AppContainer>
-    //     </DragDropContext>
-    
     <DragDropContext onDragEnd={onDragEnd}>
       <AppContainer>
         {/* Sidebar */}
         <Sidebar>
-          <AddPluginButton onClick={() => navigate('/add-plugin')}>Add Plugin</AddPluginButton>
+          {/* <AddPluginButton onClick={() => navigate('/add-plugin')}>Add Plugin</AddPluginButton> */}
           <Droppable droppableId="column1">
             {(provided) => (
               <Column ref={provided.innerRef} {...provided.droppableProps}>

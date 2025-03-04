@@ -14,7 +14,7 @@ import { WorkflowProgress } from "./components/exporter/WorkflowProgress";
 import { ManufacturerDashboard } from "./components/manufacturer/ManufacturerDashboard";
 import { ManufacturerWorkflowPage } from "./components/manufacturer/ManufaturerWorkflowPage";
 import WorkflowCreation from "./components/exporter/WorkflowCreation";
-import WorkflowDetailsPage from "./components/exporter/WorkflowDetails";
+import WorkflowDetails from "./components/exporter/WorkflowDetails";
 import MainSidebar from "./components/sidebar/MainSidebar";
 import styled from "styled-components";
 import { useUser } from "./context/UserContext";
@@ -57,7 +57,7 @@ function App() {
           {/* Route for the exporter workflow track page */}
           <Route path="/progress" element={<WorkflowProgress />} />
 
-          <Route path="/workflow-details" element={<WorkflowDetailsPage />} />
+          <Route path="/workflow-details" element={<WorkflowDetails />} />
 
           {/* Route for the manufacturer dashboard */}
           <Route
