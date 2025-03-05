@@ -163,15 +163,25 @@ const AllWorkflowsPage = () => {
   useEffect(() => {
     if (!user || !user.exporter_id) return;
 
-    const filtered = allWorkflows.filter(
-      (wf) => wf.exporter_id === user.exporter_id
-    );
+    const filtered = allWorkflows
+    .filter((wf) => 
+      wf.exporter_id === user.exporter_id &&  // Match exporter ID
+      wf.versions.some((version) => version.status === 'pending') // Ensure at least one pending version exists
+    )
+    .map((wf) => ({
+      ...wf,
+      versions: wf.versions.filter((version) => version.status === 'pending'), // Keep only pending versions
+    }));
     setExporterWorkflows(filtered);
+
+    console.log("Pending workflows: ", exporterWorkflows)
   }, [allWorkflows, user]);
 
   // Compute totals
   const totalCount = exporterWorkflows.length;
-  const pendingCount = exporterWorkflows.filter((wf) => wf.status === 'Pending').length;
+  const pendingCount = exporterWorkflows.reduce((count, wf) => {
+  return count + wf.versions.length; // Count only pending versions
+}, 0);
   const inProgressCount = exporterWorkflows.filter((wf) => wf.status === 'In Progress').length;
   const completedCount = exporterWorkflows.filter((wf) => wf.status === 'Completed').length;
 
@@ -270,7 +280,6 @@ const AllWorkflowsPage = () => {
             <TableHeaderCell>Workflow ID</TableHeaderCell>
             <TableHeaderCell>Manufacturer (ID, Name)</TableHeaderCell>
             <TableHeaderCell>Date Created</TableHeaderCell>
-            <TableHeaderCell>Expected Completion</TableHeaderCell>
             <TableHeaderCell>Status</TableHeaderCell>
             <TableHeaderCell>Progress</TableHeaderCell>
             <TableHeaderCell>Action</TableHeaderCell>
@@ -283,10 +292,14 @@ const AllWorkflowsPage = () => {
               <TableCell>
                 {wf.manufacturer_id}
               </TableCell>
-              <TableCell>{wf.created_at}</TableCell>
-              <TableCell>{wf.expectedCompletion}</TableCell>
+              <TableCell>{new Date(wf.created_at).toLocaleDateString()}</TableCell>
               <TableCell>
-                <StatusBadge status={wf.status}>{wf.status}</StatusBadge>
+                {/* Find the first pending version directly inside JSX */}
+        {wf.versions.find((version) => version.status === 'pending') ? (
+          <StatusBadge status="pending">Pending</StatusBadge>
+        ) : (
+          <StatusBadge status="unknown">Unknown</StatusBadge>
+        )}
               </TableCell>
               <TableCell>
                 <ProgressBarContainer>

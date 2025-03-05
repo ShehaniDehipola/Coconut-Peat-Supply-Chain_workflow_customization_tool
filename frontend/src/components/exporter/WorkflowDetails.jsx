@@ -50,11 +50,11 @@ const StatusLabel = styled.span`
   border-radius: 5px;
   color: white;
   font-size: 14px;
-  font-weight: bold;
+  width: 60px;
   background: ${(props) =>
     props.status === "pending" ? "#FFC107" :
     props.status === "in progress" ? "#4CAF50" :
-    props.status === "completed" ? "#D32F2F" : "#2D3142"};
+    props.status === "completed" ? "#D32F2F" : "#FFC107"};
 `;
 
 const StepsContainer = styled.div`
@@ -74,6 +74,7 @@ const StepBox = styled.div`
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  height: 50px;
   font-size: 14px;
   font-weight: bold;
   min-width: 140px;
@@ -145,7 +146,8 @@ const Button = styled.button`
 `;
 
 const Dropdown = styled.select`
-  width: 100%;
+  width: 60%;
+  margin-left: 30px;
   padding: 10px;
   border: 1px solid #ccc;
   border-radius: 5px;
@@ -161,6 +163,10 @@ const DropdownOption = styled.option`
   color: black;
   background: white;
 `;
+
+const Label = styled.label`
+  margin-top: 10px;
+`
 
 const AnimatedDiv = styled.div`
   opacity: 20;
@@ -351,7 +357,9 @@ const WorkflowDetails = ({ }) => {
             <React.Fragment key={index}>
                 <StepBox>
                   <PluginName>{step.pluginName}</PluginName>
-                <RequiredAmount>Required: {step.required_amount}</RequiredAmount>
+                {step.required_amount !== undefined && step.required_amount !== "" && (
+          <RequiredAmount>Required: {step.required_amount}</RequiredAmount>
+        )}
               </StepBox>
               {index < arr.length - 1 && <FaArrowRight size={20} color="#2D3142" />}
             </React.Fragment>
@@ -373,9 +381,9 @@ const WorkflowDetails = ({ }) => {
 
         {/* Version Control Actions */}
         <ButtonsContainer>
-          <Button bgColor="#4CAF50" hoverColor="#388E3C" onClick={handleEditWorkflow}>Edit Version</Button>
+          <Button bgColor="#1565C0" hoverColor="#0D47A1" onClick={handleEditWorkflow}>Edit Version</Button>
           <Button bgColor="#D32F2F" hoverColor="#B71C1C">Delete Version</Button>
-          <Button bgColor="#2D3142" hoverColor="#1565C0" onClick={handleConfirmWorkflow}>Confirm Version</Button>
+          <Button bgColor="#4CAF50" hoverColor="#388E3C" onClick={handleConfirmWorkflow}>Confirm Version</Button>
         </ButtonsContainer>
       </LeftContainer>
 
@@ -391,10 +399,22 @@ const WorkflowDetails = ({ }) => {
         <label>Status:</label>
         <StatusLabel>{status}</StatusLabel>
 
-        <label>Assigned Manufacturer:</label>
+        <Label>Assigned Manufacturer:</Label>
         <p>{selectedManufacturer ? manufacturers.find(m => m.user_id === selectedManufacturer)?.username : "Not Assigned"}</p>
 
-        <Button bgColor="#2D3142" onClick={handleWorkflowStatusUpdate}>
+        <Button bgColor="#2D3142" 
+  hoverColor="#1F2532" 
+  style={{
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: "8px",
+    padding: "12px 16px",
+    fontSize: "16px",
+    marginTop: "20px", // Adjusted spacing
+    width: "100%", // Full width inside RightContainer
+    textAlign: "center",
+  }}onClick={handleWorkflowStatusUpdate}>
           <FontAwesomeIcon icon={faPaperPlane} />Send to Manufacturer
         </Button>
       </RightContainer>
