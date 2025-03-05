@@ -1,0 +1,3 @@
+[submodule "backend/core-system"]
+	path = backend/core-system
+	url = https://github.com/harith2001/Coconut-Peat-Supply-chain_core_system.git
