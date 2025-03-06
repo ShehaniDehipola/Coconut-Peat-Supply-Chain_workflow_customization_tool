@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Heatmap, XAxis as XAxisHeatmap, YAxis as YAxisHeatmap, Tooltip as TooltipHeatmap } from 'recharts';
 import { useUser } from '../../context/UserContext';
+import axios from "axios";
 
 const Container = styled.div`
   padding: 20px;
@@ -65,6 +66,13 @@ const MetricCard = styled.div`
   }}
 `;
 
+const MainContent = styled.div`
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 20px;
+`;
+
 const WorkflowList = styled.div`
   display: flex;
   flex-direction: column;
@@ -94,6 +102,24 @@ const Button = styled.button`
   }
 `;
 
+const StatusBadge = styled.span`
+  padding: 0.3rem 0.6rem;
+  border-radius: 0.25rem;
+  color: #fff;
+  background-color: ${({ status }) => {
+    switch (status) {
+      case 'pending':
+        return '#ffc107';
+      default:
+        return '#6c757d';
+    }
+  }};
+`;
+
+const WorkerHeatmapContainer = styled.div`
+  margin-top: 20px;
+`;
+
 export const ManufacturerDashboard = () => {
   const navigate = useNavigate();
   const { user } = useUser();
@@ -104,25 +130,24 @@ export const ManufacturerDashboard = () => {
   }, [user]);
 
   useEffect(() => {
-    if (!user || !user.user_id) return; // Ensure user data is available
+    if (!user || !user.user_id) return;
 
-    console.log("Fetching workflows for user ID:", user.user_id);
+    axios
+      .get(`http://localhost:5000/api/workflow?manufacturerId=${user.user_id}`)
+      .then((response) => {
+        console.log('Fetched Workflows:', response.data);
 
-    fetch(`http://localhost:5000/api/workflow/?manufacturerId=${user.user_id}`)
-      .then(response => response.json())
-      .then(data => {
-    console.log("API Response:", data); // Debugging
+        const pendingWorkflows = response.data
+          .filter((wf) => wf.manufacturer_id === user.user_id)
+          .map((wf) => ({
+            ...wf,
+            versions: wf.versions.filter((version) => version.status === 'pending'),
+          }))
+          .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
-    if (Array.isArray(data)) {
-      setWorkflows(data);
-    } else if (Array.isArray(data.workflows)) {
-      setWorkflows(data.workflows);
-    } else {
-      console.error("Unexpected API response format:", data);
-      setWorkflows([]); // Fallback to empty array
-    }
-  })
-      .catch(error => console.error('Error fetching workflows:', error));
+        setWorkflows(pendingWorkflows.slice(0, 3));
+      })
+      .catch((error) => console.error('Error fetching workflows:', error));
   }, [user]);
 
   const totalWorkflows = workflows.length;
@@ -152,7 +177,7 @@ export const ManufacturerDashboard = () => {
   // }, []);
 
   const updateWorkflowStatus = (index) => {
-    navigate("/manufacturer-workflow")
+    navigate("/each-workflow")
   };
 
   const productionEfficiencyData = [
@@ -175,7 +200,6 @@ const workerProductivityData = [
   return (
     <Container>
       <WorkflowHeader>Dashboard</WorkflowHeader>
-      <DashboardGrid>
       <MetricsContainer>
         <MetricCard type="Total">
           <h3>Total Workflows</h3>
@@ -194,22 +218,24 @@ const workerProductivityData = [
           <p>{statusCounts.Completed}</p>
         </MetricCard>
       </MetricsContainer>
+
+      <MainContent>
       <WorkflowContainer>
           <h3>New Workflows Assigned</h3>
           <WorkflowList>
-            {Array.isArray(workflows) && workflows.length > 0 ? (
-  workflows.map((workflow, index) => (
-    <WorkflowCard key={index}>
-      <div>
-        <h4>{workflow.workflow_id}</h4>
-        <p>Status: {workflow.status}</p>
-      </div>
-      <Button onClick={() => updateWorkflowStatus(index)}>View</Button>
-    </WorkflowCard>
-  ))
-) : (
-  <p>No workflows found.</p>
-)}
+            {workflows.length > 0 ? (
+          workflows.map((wf) => (
+            <WorkflowCard key={wf.workflow_id}>
+              <div>
+                <p>{wf.workflow_id}</p> 
+              </div>
+              <StatusBadge status="pending">Pending</StatusBadge>
+              {/* <Button onClick={() => alert(`View Workflow ${wf.workflow_id}`)}>View</Button> */}
+            </WorkflowCard>
+          ))
+        ) : (
+          <p>No pending workflows found.</p>
+        )}
 
           </WorkflowList>
         </WorkflowContainer>
@@ -223,6 +249,9 @@ const workerProductivityData = [
         </WorkflowCard>
       ))} */}
 
+        <div>
+          
+        
       <h3>Production Efficiency Over Time</h3>
       <ResponsiveContainer width="100%" height={300}>
         <LineChart data={productionEfficiencyData} margin={{ top: 10, right: 30, left: 0, bottom: 10 }}>
@@ -236,11 +265,16 @@ const workerProductivityData = [
           <Line type="monotone" dataKey="Washing" stroke="#ffc658" />
           <Line type="monotone" dataKey="Drying" stroke="#ff7300" />
         </LineChart>
-      </ResponsiveContainer>
+          </ResponsiveContainer>
+          </div>
+
+      </MainContent>
+
+      <WorkerHeatmapContainer>
 
       <h3>Worker Productivity Heatmap</h3>
       <table width="100%" height={300}>
-        <tbody width="50%" height={300}>
+        <tbody>
           {workerProductivityData.map((row, index) => (
             <tr key={index}>
               <td>{row.worker}</td>
@@ -251,7 +285,7 @@ const workerProductivityData = [
           ))}
         </tbody>
       </table>
-      </DashboardGrid>
+      </WorkerHeatmapContainer>
     </Container>
   );
 };

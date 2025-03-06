@@ -3,6 +3,7 @@ import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 import { useNavigate, useLocation } from 'react-router-dom';
 import styled from "styled-components";
 import { v4 as uuidv4 } from "uuid";
+import { FaArrowRight } from "react-icons/fa";
 
 // Styled Components
 const AppContainer = styled.div`
@@ -203,9 +204,6 @@ const WorkflowCustomizationTool = () => {
         { id: "plugin-1", content: "Grading" },
         { id: "plugin-2", content: "Cutting" },
         { id: "plugin-3", content: "Washing" },
-        { id: "plugin-4", content: "Drying" },
-        { id: "plugin-5", content: "Packaging" },
-        { id: "plugin-6", content: "Delivering" },
       ],
     },
     column2: {
@@ -233,22 +231,6 @@ const WorkflowCustomizationTool = () => {
     steps: ["Fill Tanks r", "Wash for 24 Hours", "Wash for Another 24 Hours", "Final Wash for 12 Hours", "Check EC Level"],
     inputs: [{ label: "EC Level:", parameter: "targetECLevel" }],
     },
-  "plugin-4": {
-    name: "Drying",
-    steps: ["Fill Tanks r", "Wash for 24 Hours", "Wash for Another 24 Hours", "Final Wash for 12 Hours", "Check EC Level"],
-    inputs: [{ label: "EC Level:", parameter: "targetECLevel" }],
-    },
-  "plugin-6": {
-    name: "Packaging",
-    steps: ["Fill Tanks r", "Wash for 24 Hours", "Wash for Another 24 Hours", "Final Wash for 12 Hours", "Check EC Level"],
-    inputs: [{ label: "EC Level:", parameter: "targetECLevel" }],
-    }
-  ,
-  "plugin-7": {
-    name: "Delivering",
-    steps: ["Fill Tanks r", "Wash for 24 Hours", "Wash for Another 24 Hours", "Final Wash for 12 Hours", "Check EC Level"],
-    inputs: [{ label: "EC Level:", parameter: "targetECLevel" }],
-  },
   };
 
   useEffect(() => {
@@ -304,13 +286,15 @@ const WorkflowCustomizationTool = () => {
   const stepsData = plugins.column2.items.map((item, index) => ({
     pluginName: pluginsData[item.id]?.name || "Unknown Plugin",
     order: index + 1,
-    required_amount: pluginsData[item.id]?.required_amount || 0,
+    required_amount: item.required_amount || "",
   }));
 
   console.log("Workflow ID:", workflowID);
   console.log("Steps:", stepsData);
 
-  const payload = { steps: stepsData };
+    const payload = { steps: stepsData };
+    
+    console.log("Navigating to workflow-details with:", stepsData);
 
   // Check if we are editing an existing workflow (i.e. workflow_id is present)
   if (location.state?.workflow_id) {
@@ -331,10 +315,14 @@ const WorkflowCustomizationTool = () => {
 
       const data = await response.json();
       console.log("Update successful:", data);
+      console.log("Navigating to workflow-details with:", stepsData);
       // After successful update, navigate to the details page
       navigate("/workflow-details", {
         state: { workflow_id: workflowID, steps: stepsData },
       });
+
+      // Navigate to workflow-details while passing required_amount in state
+  navigate("/workflow-details", { state: { workflow_id: workflowID, steps: stepsData } });
     } catch (error) {
       console.error("Error updating workflow:", error);
       alert(`Error updating workflow: ${error.message}`);
@@ -423,7 +411,8 @@ const WorkflowCustomizationTool = () => {
     pluginName: pluginsData[item.id]?.name || "Unknown Plugin",
     order: index + 1,
     required_amount: pluginsData[item.id]?.required_amount || 0,
-  }));
+      }));
+      console.log("Navigating to workflow-details with:", stepsData);
       navigate("/workflow-details", { state: { steps: stepsData } });
     } catch (error) {
       setError(error.message);
@@ -465,6 +454,7 @@ const WorkflowCustomizationTool = () => {
             {(provided) => (
               <ColumnCanvas ref={provided.innerRef} {...provided.droppableProps}>
                 {plugins.column2.items.map((item, index) => (
+                  <React.Fragment key={item.id}>
                   <Draggable key={item.id} draggableId={item.id} index={index}>
                     {(provided) => (
                       <PluginCard ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}>
@@ -486,15 +476,33 @@ const WorkflowCustomizationTool = () => {
       {pluginsData[item.id].inputs.map((input, idx) => (
         <InputField key={idx}>
           <label>{input.label}</label>
-          <input type="text" />
+          <input 
+          type="text" 
+          value={plugins.column2.items[index]?.required_amount || ""}
+          onChange={(e) => {
+            const updatedItems = [...plugins.column2.items];
+            updatedItems[index] = { 
+              ...updatedItems[index], 
+              required_amount: e.target.value 
+            };
+            setPlugins((prev) => ({
+              ...prev,
+              column2: { ...prev.column2, items: updatedItems },
+            }));
+          }}
+        />
         </InputField>
         ))}
-                       <Button onClick={() => updatePluginData(item.id)}>Update</Button>
                           </ExpandedSection>
                         )}
                       </PluginCard>
                     )}
-                  </Draggable>
+                    </Draggable>
+                    {/* Render arrow only if it's not the last item */}
+          {index < plugins.column2.items.length - 1 && (
+            <FaArrowRight size={20} style={{ alignSelf: "center", color: "#2D3142" }} />
+          )}
+                    </React.Fragment>
                 ))}
                 {provided.placeholder}
               </ColumnCanvas>

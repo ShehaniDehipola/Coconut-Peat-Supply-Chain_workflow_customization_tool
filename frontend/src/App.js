@@ -19,6 +19,7 @@ import MainSidebar from "./components/sidebar/MainSidebar";
 import styled from "styled-components";
 import { useUser } from "./context/UserContext";
 import AllWorkflowsPage from "./components/exporter/AllWorkflowsPage";
+import ManufacturerWorkflowsPage from "./components/manufacturer/ManufacturerWorkflowsPage";
 
 const ContentArea = styled.div`
   margin-left: 240px; /* Same as sidebar width */
@@ -67,9 +68,11 @@ function App() {
 
           {/* Route for the manufacturer workflow  */}
           <Route
-            path="/manufacturer-workflow"
-            element={<ManufacturerWorkflowPage />}
+            path="/manufacturer-workflows"
+            element={<ManufacturerWorkflowsPage />}
           />
+
+          <Route path="/each-workflow" element={<ManufacturerWorkflowPage />} />
         </Routes>
       </ContentArea>
     </div>
