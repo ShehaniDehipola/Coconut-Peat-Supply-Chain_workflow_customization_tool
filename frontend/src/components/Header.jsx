@@ -1,0 +1,67 @@
+import React from 'react';
+import styled from 'styled-components';
+import { useNavigate } from 'react-router-dom';
+import plusIcon from '../assests/plus.png';
+
+const HeaderContainer = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+  border-bottom: 1px solid #ddd;
+`;
+
+const Title = styled.h2`
+  font-size: 24px;
+  font-weight: bold;
+`;
+
+const ButtonGroup = styled.div`
+  display: flex;
+  gap: 10px;
+`;
+
+const Button = styled.button`
+  display: flex;
+  align-items: center;
+  width: 150px;
+  background-color: #2D3142;
+  color: white;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+
+  &:hover {
+    background-color:rgb(42, 63, 87);
+  }
+
+  img {
+    margin-right: 8px;
+    width: 16px;
+    height: 16px;
+     filter: brightness(0) invert(1);
+  }
+`;
+
+const Header = ({ title }) => {
+  const navigate = useNavigate();
+
+  return (
+    <HeaderContainer>
+      <Title>{title}</Title>
+      <div style={{ display: "flex", gap: "10px" }}>
+        <Button onClick={() => navigate("/add-plugin")}>
+          <img src={plusIcon} alt="plus" style={{ width: "18px", marginRight: "8px", color: "white" }} />
+          Add Plugin
+        </Button>
+              <Button onClick={() => navigate("/new-plugin")}>
+                  <img src={plusIcon} alt="plus" style={{ width: "18px", marginRight: "8px" }} />
+          Create Plugin
+        </Button>
+      </div>
+    </HeaderContainer>
+  );
+};
+
+export default Header;

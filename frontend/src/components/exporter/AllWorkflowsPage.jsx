@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import styled from 'styled-components';
 import { useUser } from '../../context/UserContext';
 import axios from 'axios'
+import Header from '../Header';
 
 //
 // Styled Components
@@ -10,7 +11,7 @@ const PageContainer = styled.div`
   padding: 1rem;
 `;
 
-const PageTitle = styled.h1`
+const PageTitle = styled.h2`
   margin: 0;
 `;
 
@@ -216,7 +217,7 @@ const AllWorkflowsPage = () => {
 
   return (
     <PageContainer>
-      <PageTitle>Workflows List</PageTitle>
+      <Header title="Workflows"></Header>
 
       {/* Sub-header section */}
       <SubHeader>

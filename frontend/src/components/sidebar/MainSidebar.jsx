@@ -1,7 +1,8 @@
-import React from "react";
+import React, { useState } from "react";
 import styled from "styled-components";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { FaArrowRight } from "react-icons/fa";
 
 import dashboardIcon from "../../assests/dashboard.png"
 import manufacturerIcon from "../../assests/conveyor.png"
@@ -13,18 +14,19 @@ import plusIcon from "../../assests/plus.png"
 
 // Styled Components
 const SidebarContainer = styled.div`
-  width: 200px;
+  width: ${(props) => (props.expanded ? "200px" : "60px")};
   height:  calc(100vh - 50px);
   background: #2D3142;
   color: white;
   display: flex;
   flex-direction: column;
-  padding: 20px;
+  padding: 10px;
   box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
   position: fixed;
   left: 0;
   overflow-y: auto;
   justify-content: space-between;
+  transition: width 0.3s ease-in-out;
 `;
 
 // const Logo = styled.h2`
@@ -65,10 +67,17 @@ const NavItem = styled.div`
   display: flex;
   align-items: center;
   font-size: 16px;
+  white-space: nowrap;
 
   &:hover {
     background: #d89527;
     color: black;
+  }
+
+  span {
+    display: ${(props) => (props.expanded ? "inline" : "none")};
+    margin-left: 12px;
+    transition: opacity 0.3s ease-in-out;
   }
 `;
 
@@ -102,9 +111,11 @@ const QuickActionButton = styled.button`
 `;
 
 const Icon = styled.img`
-  width: 20px;
-  height: 20px;
-  margin-right: 10px;
+  width: 26px;
+  height: 26px;
+  margin-right: ${(props) => (props.expanded ? "20px" : "0")};
+  margin-top: 10px;
+  transition: margin-right 0.3s ease-in-out;
 `;
 
 const LogoutButton = styled.button`
@@ -119,12 +130,6 @@ const LogoutButton = styled.button`
   display: flex;
   align-items: center;
   justify-content: center;
-  // position: absolute;
-  // bottom: 60px; /* Anchors logout button to the bottom */
-  // left: 0;
-  // right: 0;
-  // margin: auto;
-  // width: 90%;
 
   &:hover {
     background: #d89527;
@@ -132,8 +137,41 @@ const LogoutButton = styled.button`
   }
 `;
 
+const ToggleButton = styled.button`
+  position: absolute;
+  right: -15px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 30px;
+  height: 30px;
+  background: black;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px;
+  color: white;
+  font-size: 24px;
+  transition: transform 0.3s ease-in-out;
+
+  svg {
+    color: white;
+    font-size: 16px;
+    transform: ${(props) => (props.expanded ? "rotate(180deg)" : "rotate(0deg)")};
+    transition: transform 0.3s ease-in-out;
+  }
+`;
+
 const MainSidebar = ({ role }) => {
   const navigate = useNavigate();
+  const [expanded, setExpanded] = useState(false);
+
+  const toggleSidebar = () => {
+    setExpanded((prev) => !prev);
+  };
+
 
   const handleLogout = async () => {
     try {
@@ -168,28 +206,31 @@ const MainSidebar = ({ role }) => {
   };
 
   return (
-    <SidebarContainer>
+    <SidebarContainer expanded={expanded}>
+      <ToggleButton onClick={toggleSidebar} expanded={expanded}>
+        <FaArrowRight />
+      </ToggleButton>
 
       {/* Navigation */}
       <NavSection>
 
         {role === "exporter" && (
           <>
-          <NavItem onClick={() => navigate("/exporter-dashboard")}><Icon src={dashboardIcon} alt="Dashboard" />Dashboard</NavItem>
-          <NavItem onClick={() => navigate("/all-workflows")}><Icon src={workflowIcon} alt="Workflow" />Workflows</NavItem>
-            <NavItem onClick={() => navigate("/manufacturers")}><Icon src={manufacturerIcon} alt="Manufacturer" />Manufacturers</NavItem>
-            <NavItem onClick={() => navigate("/reports")}><Icon src={reportsIcon} alt="Report" />Reports & Analytics</NavItem>
-        <NavItem onClick={() => navigate("/settings")}><Icon src={settingsIcon} alt="Settings" />Settings</NavItem>
+          <NavItem onClick={() => navigate("/exporter-dashboard")}><Icon src={dashboardIcon} alt="Dashboard" />{expanded && "Dashboard"}</NavItem>
+          <NavItem onClick={() => navigate("/all-workflows")}><Icon src={workflowIcon} alt="Workflow" />{expanded && "Workflows"}</NavItem>
+            <NavItem onClick={() => navigate("/manufacturers")}><Icon src={manufacturerIcon} alt="Manufacturer" />{expanded && "Manufacturers"}</NavItem>
+            <NavItem onClick={() => navigate("/reports")}><Icon src={reportsIcon} alt="Report" />{expanded && "Reports & Analytics"}</NavItem>
+        <NavItem onClick={() => navigate("/settings")}><Icon src={settingsIcon} alt="Settings" />{expanded && "Settings"}</NavItem>
           </>
         )}
 
         {role === "manufacturer" && (
           <>
-          <NavItem onClick={() => navigate("/manufacturer-dashboard")}><Icon src={dashboardIcon} alt="Dashboard" />Dashboard</NavItem>
-          <NavItem onClick={() => navigate("/manufacturer-workflows")}><Icon src={workflowIcon} alt="Workflow" />Workflows</NavItem>
+          <NavItem onClick={() => navigate("/manufacturer-dashboard")}><Icon src={dashboardIcon} alt="Dashboard" />{expanded && "Dashboard"}</NavItem>
+          <NavItem onClick={() => navigate("/manufacturer-workflows")}><Icon src={workflowIcon} alt="Workflow" />{expanded && "Workflows"}</NavItem>
             {/* <NavItem onClick={() => navigate("/assigned-workflows")}>Assigned Workflows</NavItem> */}
-            <NavItem onClick={() => navigate("/reports")}><Icon src={reportsIcon} alt="Report" />Reports & Analytics</NavItem>
-            <NavItem onClick={() => navigate("/settings")}><Icon src={settingsIcon} alt="Settings" />Settings</NavItem>
+            <NavItem onClick={() => navigate("/reports")}><Icon src={reportsIcon} alt="Report" />{expanded && "Reports & Analytics"}</NavItem>
+            <NavItem onClick={() => navigate("/settings")}><Icon src={settingsIcon} alt="Settings" />{expanded && "Settings"}</NavItem>
           </>
         )}
 
@@ -197,15 +238,15 @@ const MainSidebar = ({ role }) => {
 
       <BottomContainer>
       {/* Quick Actions */}
-      {role === "exporter" && (
+      {/* {role === "exporter" && (
       <QuickActions>
         <QuickActionButton onClick={() => navigate("/add-plugin")}><Icon src={plusIcon} alt="plus" />Add Plugin</QuickActionButton>
         <QuickActionButton onClick={() => navigate("/new-workflow")}><Icon src={plusIcon} alt="plus" />Create Workflow</QuickActionButton>
       </QuickActions>
 
-      )}
+      )} */}
       {/* Logout Button */}
-      <LogoutButton onClick={handleLogout}><Icon src={LogoutIcon} alt="logout" />Logout</LogoutButton>
+      <NavItem onClick={handleLogout}><Icon src={LogoutIcon} alt="logout" />{expanded && "Logout"}</NavItem>
       </BottomContainer>
     </SidebarContainer>
   );

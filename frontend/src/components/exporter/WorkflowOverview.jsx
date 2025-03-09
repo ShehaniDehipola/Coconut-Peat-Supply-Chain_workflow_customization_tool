@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { Pie, Bar, Line } from 'react-chartjs-2';
 import 'chart.js/auto';
+import Header from '../Header';
 
 const Container = styled.div`
   padding: 20px;
@@ -9,12 +10,12 @@ const Container = styled.div`
   margin: auto;
 `;
 
-const Header = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-`;
+// const Header = styled.div`
+//   display: flex;
+//   justify-content: space-between;
+//   align-items: center;
+//   margin-bottom: 20px;
+// `;
 
 const MetricsContainer = styled.div`
   display: flex;
@@ -336,7 +337,8 @@ const supplierPerformanceData = {
 
   return (
     <Container>
-      <Header>
+      <Header title="Dashboard"></Header>
+      {/* <Header>
         <h2>Dashboard</h2>
         <FiltersContainer>
           <Input
@@ -352,7 +354,7 @@ const supplierPerformanceData = {
             <option value="Completed">Completed</option>
           </Select>
         </FiltersContainer>
-      </Header>
+      </Header> */}
 
       {/* Metrics Cards */}
       <MetricsContainer>
