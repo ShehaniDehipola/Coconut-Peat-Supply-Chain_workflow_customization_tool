@@ -1,41 +1,50 @@
-const Workflow = require("../models/Worflow");
+const Workflow = require('../models/Worflow');
 
 // 1. Workflow structure validation
 const validateWorkflowStructure = (req, res, next) => {
   const { steps } = req.body;
 
-  // if (
-  //   !workflow_name ||
-  //   !exporter_id ||
-  //   !Array.isArray(steps) ||
-  //   steps.length === 0
-  // ) {
-  //   return res
-  //     .status(400)
-  //     .json({
-  //       message: "Workflow must have a name, exporter, and at least one step.",
-  //     });
-  // }
+  if (!Array.isArray(steps) || steps.length === 0) {
+    return res
+      .status(400)
+      .json({ message: 'Workflow must contain at least one step.' });
+  }
 
-  // Validate each step has a required_amount
+  const stepOrders = new Set();
+
   for (let step of steps) {
-    if (
-      !step.pluginName ||
-      typeof step.order !== "number" ||
-      typeof step.required_amount !== "number" ||
-      step.required_amount < 0
-    ) {
+    if (!step.pluginName || typeof step.pluginName !== 'string') {
       return res
         .status(400)
-        .json({ message: `Invalid step data for plugin: ${step.pluginName}` });
+        .json({ message: 'Each step must have a valid plugin name.' });
+    }
+
+    if (typeof step.order !== 'number' || step.order < 1) {
+      return res.status(400).json({
+        message: `Step ${step.pluginName} must have a valid order (positive integer).`,
+      });
+    }
+
+    if (stepOrders.has(step.order)) {
+      return res
+        .status(400)
+        .json({ message: `Duplicate step order detected: ${step.order}.` });
+    }
+    stepOrders.add(step.order);
+
+    if (typeof step.required_amount !== 'number' || step.required_amount <= 0) {
+      return res.status(400).json({
+        message: `Step ${step.pluginName} must have a valid required amount greater than zero.`,
+      });
     }
   }
+
   next(); // Pass to next middleware or controller
 };
 
 // 2. Business logic validation (Checking Required Plugins)
 const validateRequiredPlugins = (req, res, next) => {
-  const requiredSteps = ["Grading", "Cutting", "Washing"];
+  const requiredSteps = ['Grading', 'Cutting', 'Washing'];
   const workflowSteps = req.body.steps.map((step) => step.pluginName);
 
   for (let step of requiredSteps) {
@@ -48,9 +57,9 @@ const validateRequiredPlugins = (req, res, next) => {
   next();
 };
 
-// 3. Step execution erder validation
+// 3. Step execution order validation
 const validateWorkflowOrder = (req, res, next) => {
-  const correctOrder = ["Grading", "Cutting", "Washing", "Drying"];
+  const correctOrder = ['Grading', 'Cutting', 'Washing'];
   const workflowOrder = req.body.steps.map((step) => step.pluginName);
 
   for (let i = 0; i < workflowOrder.length - 1; i++) {
@@ -72,10 +81,10 @@ const validateWorkflowOrder = (req, res, next) => {
 
 // 5. Manufacturer capabilities validation
 const manufacturers = [
-  { id: "manu-001", supportedPlugins: ["Grading", "Cutting"], capacity: 100 },
+  { id: 'manu-001', supportedPlugins: ['Grading', 'Cutting'], capacity: 100 },
   {
-    id: "manu-002",
-    supportedPlugins: ["Grading", "Cutting", "Washing"],
+    id: 'manu-002',
+    supportedPlugins: ['Grading', 'Cutting', 'Washing'],
     capacity: 50,
   },
 ];
@@ -83,11 +92,11 @@ const manufacturers = [
 const validateManufacturer = async (req, res, next) => {
   const { manufacturer_id, steps } = req.body;
   if (!manufacturer_id)
-    return res.status(400).json({ message: "Manufacturer ID is required." });
+    return res.status(400).json({ message: 'Manufacturer ID is required.' });
 
   const manufacturer = manufacturers.find((m) => m.id === manufacturer_id);
   if (!manufacturer)
-    return res.status(400).json({ message: "Manufacturer not found." });
+    return res.status(400).json({ message: 'Manufacturer not found.' });
 
   const workflowPlugins = steps.map((step) => step.pluginName);
   const missingPlugins = workflowPlugins.filter(
@@ -96,7 +105,7 @@ const validateManufacturer = async (req, res, next) => {
 
   if (missingPlugins.length > 0) {
     return res.status(400).json({
-      message: `Manufacturer lacks support for: ${missingPlugins.join(", ")}`,
+      message: `Manufacturer lacks support for: ${missingPlugins.join(', ')}`,
     });
   }
 
@@ -116,7 +125,7 @@ const validateWorkflowVersion = async (req, res, next) => {
   try {
     const workflow = await Workflow.findById(req.params.id);
     if (!workflow)
-      return res.status(404).json({ message: "Workflow not found." });
+      return res.status(404).json({ message: 'Workflow not found.' });
 
     if (req.body.version && req.body.version !== workflow.version) {
       return res.status(400).json({

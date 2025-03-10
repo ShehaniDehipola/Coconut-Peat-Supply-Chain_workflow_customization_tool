@@ -4,11 +4,12 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import styled from "styled-components";
 import { v4 as uuidv4 } from "uuid";
 import { FaArrowRight } from "react-icons/fa";
+import Layout from "./MainLayout";
 
 // Styled Components
 const AppContainer = styled.div`
   display: flex;
-  height: calc(100vh - 50px); /* Full viewport height */
+  height: calc(100vh - 60px); /* Full viewport height */
 `;
 
 const WorkflowContainer = styled.div`
@@ -43,7 +44,7 @@ const BuildWorkflowButton = styled.button`
 `;
 
 const Sidebar = styled.div`
-  width: 200px; /* Sidebar width */
+  width: 200px; 
   background-color: #d3d2d0;
   border-right: 1px solid #ccc;
   padding: 20px;
@@ -286,52 +287,68 @@ const WorkflowCustomizationTool = () => {
   const stepsData = plugins.column2.items.map((item, index) => ({
     pluginName: pluginsData[item.id]?.name || "Unknown Plugin",
     order: index + 1,
-    required_amount: item.required_amount || "",
+    required_amount: Number(item.required_amount) || 20, // Ensure it's a valid number
   }));
 
   console.log("Workflow ID:", workflowID);
   console.log("Steps:", stepsData);
 
-    const payload = { steps: stepsData };
-    
-    console.log("Navigating to workflow-details with:", stepsData);
+  const payload = { steps: stepsData };
 
-  // Check if we are editing an existing workflow (i.e. workflow_id is present)
-  if (location.state?.workflow_id) {
-    try {
-      const response = await fetch(
-        `http://localhost:5000/api/workflow/${workflowID}`,
-        {
-          method: "PUT", // or PATCH depending on your backend implementation
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        }
-      );
+  try {
+    // 🔹 Step 1: Validate Workflow Before Updating/Creating
+    const validateResponse = await fetch("http://localhost:5000/api/workflow/validate-workflow", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to update workflow");
-      }
+    const validateData = await validateResponse.json();
 
-      const data = await response.json();
-      console.log("Update successful:", data);
-      console.log("Navigating to workflow-details with:", stepsData);
-      // After successful update, navigate to the details page
-      navigate("/workflow-details", {
-        state: { workflow_id: workflowID, steps: stepsData },
-      });
-
-      // Navigate to workflow-details while passing required_amount in state
-  navigate("/workflow-details", { state: { workflow_id: workflowID, steps: stepsData } });
-    } catch (error) {
-      console.error("Error updating workflow:", error);
-      alert(`Error updating workflow: ${error.message}`);
+    if (!validateResponse.ok) {
+      throw new Error(validateData.message || "Workflow validation failed.");
     }
-  } else {
-    // In create mode: navigate to the workflow-details page (where you might show a preview or further options)
-    navigate("/workflow-details", { state: { workflow_id: workflowID, steps: stepsData } });
+
+    console.log("Validation successful! Proceeding with update/create.");
+
+    // 🔹 Step 2: If editing an existing workflow, update it
+    if (location.state?.workflow_id) {
+      try {
+        const response = await fetch(
+          `http://localhost:5000/api/workflow/${workflowID}`,
+          {
+            method: "PUT", // or PATCH depending on your backend implementation
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          }
+        );
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || "Failed to update workflow");
+        }
+
+        const data = await response.json();
+        console.log("Update successful:", data);
+
+        // After successful update, navigate to the details page
+        navigate("/workflow-details", { state: { workflow_id: workflowID, steps: stepsData } });
+
+      } catch (error) {
+        console.error("Error updating workflow:", error);
+        alert(`Error updating workflow: ${error.message}`);
+      }
+    } else {
+      // 🔹 Step 3: If creating a new workflow, navigate to workflow-details
+      navigate("/workflow-details", { state: { workflow_id: workflowID, steps: stepsData } });
+    }
+
+  } catch (error) {
+    console.error("Error validating workflow:", error);
+    alert(`Error: ${error.message}`);
   }
 };
+
 
   const onDragEnd = (result) => {
     const { source, destination } = result;
@@ -421,6 +438,7 @@ const WorkflowCustomizationTool = () => {
 
   return (
     <DragDropContext onDragEnd={onDragEnd}>
+      <Layout role="exporter">
       <AppContainer>
         {/* Sidebar */}
         <Sidebar>
@@ -510,6 +528,8 @@ const WorkflowCustomizationTool = () => {
           </Droppable>
         </Canvas>
       </AppContainer>
+
+      </Layout>
     </DragDropContext>
   );
 };
