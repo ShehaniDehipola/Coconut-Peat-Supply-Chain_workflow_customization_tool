@@ -29,56 +29,35 @@ const SidebarContainer = styled.div`
   transition: width 0.3s ease-in-out;
 `;
 
-// const Logo = styled.h2`
-//   text-align: center;
-//   margin-bottom: 30px;
-//   font-size: 22px;
-//   color: #FFD700;
-// `;
-
-// const ProfileSection = styled.div`
-//   text-align: center;
-//   margin-bottom: 20px;
-// `;
-
-// const ProfileName = styled.h4`
-//   margin: 5px 0;
-// `;
-
-// const RoleTag = styled.span`
-//   background: #FFD700;
-//   color: black;
-//   padding: 4px 10px;
-//   border-radius: 5px;
-//   font-size: 12px;
-// `;
-
 const NavSection = styled.div`
   flex-grow: 1;
+  margin-top: 20px;
 `;
 
 const NavItem = styled.div`
+  display: flex;
+  align-items: center;
+  gap: ${(props) => (props.expanded ? "15px" : "0")}; 
   padding: 10px;
-  margin-bottom: 5px;
+  margin: 5px;
   background: ${(props) => (props.active ? "#d89527" : "transparent")};
   color: ${(props) => (props.active ? "black" : "white")};
   border-radius: 5px;
   cursor: pointer;
-  display: flex;
-  align-items: center;
   font-size: 16px;
   white-space: nowrap;
+  transition: all 0.3s ease-in-out;
 
   &:hover {
     background: #d89527;
     color: black;
   }
+`;
 
-  span {
-    display: ${(props) => (props.expanded ? "inline" : "none")};
-    margin-left: 12px;
-    transition: opacity 0.3s ease-in-out;
-  }
+const NavText = styled.span`
+  display: ${(props) => (props.expanded ? "inline" : "none")};
+  margin-left: 15px;  /* Adjust spacing between icon and text */
+  transition: opacity 0.3s ease-in-out;
 `;
 
 const BottomContainer = styled.div`
@@ -164,9 +143,8 @@ const ToggleButton = styled.button`
   }
 `;
 
-const MainSidebar = ({ role }) => {
+const MainSidebar = ({ expanded, setExpanded, role }) => {
   const navigate = useNavigate();
-  const [expanded, setExpanded] = useState(false);
 
   const toggleSidebar = () => {
     setExpanded((prev) => !prev);
@@ -216,21 +194,21 @@ const MainSidebar = ({ role }) => {
 
         {role === "exporter" && (
           <>
-          <NavItem onClick={() => navigate("/exporter-dashboard")}><Icon src={dashboardIcon} alt="Dashboard" />{expanded && "Dashboard"}</NavItem>
-          <NavItem onClick={() => navigate("/all-workflows")}><Icon src={workflowIcon} alt="Workflow" />{expanded && "Workflows"}</NavItem>
-            <NavItem onClick={() => navigate("/manufacturers")}><Icon src={manufacturerIcon} alt="Manufacturer" />{expanded && "Manufacturers"}</NavItem>
-            <NavItem onClick={() => navigate("/reports")}><Icon src={reportsIcon} alt="Report" />{expanded && "Reports & Analytics"}</NavItem>
-        <NavItem onClick={() => navigate("/settings")}><Icon src={settingsIcon} alt="Settings" />{expanded && "Settings"}</NavItem>
+            <NavItem onClick={() => navigate("/exporter-dashboard")}><Icon src={dashboardIcon} alt="Dashboard" /><NavText expanded={expanded}>Dashboard</NavText></NavItem>
+          <NavItem onClick={() => navigate("/all-workflows")}><Icon src={workflowIcon} alt="Workflow" /><NavText expanded={expanded}>Workflows</NavText></NavItem>
+            <NavItem onClick={() => navigate("/manufacturers")}><Icon src={manufacturerIcon} alt="Manufacturer" /><NavText expanded={expanded}>Manufacturers</NavText></NavItem>
+            <NavItem onClick={() => navigate("/reports")}><Icon src={reportsIcon} alt="Report" /><NavText expanded={expanded}>Reports & Analytics</NavText></NavItem>
+        <NavItem onClick={() => navigate("/settings")}><Icon src={settingsIcon} alt="Settings" /><NavText expanded={expanded}>Settings</NavText></NavItem>
           </>
         )}
 
         {role === "manufacturer" && (
           <>
-          <NavItem onClick={() => navigate("/manufacturer-dashboard")}><Icon src={dashboardIcon} alt="Dashboard" />{expanded && "Dashboard"}</NavItem>
-          <NavItem onClick={() => navigate("/manufacturer-workflows")}><Icon src={workflowIcon} alt="Workflow" />{expanded && "Workflows"}</NavItem>
+          <NavItem onClick={() => navigate("/manufacturer-dashboard")}><Icon src={dashboardIcon} alt="Dashboard" /><NavText expanded={expanded}>Dashboard</NavText></NavItem>
+          <NavItem onClick={() => navigate("/manufacturer-workflows")}><Icon src={workflowIcon} alt="Workflow" /><NavText expanded={expanded}>Workflows</NavText></NavItem>
             {/* <NavItem onClick={() => navigate("/assigned-workflows")}>Assigned Workflows</NavItem> */}
-            <NavItem onClick={() => navigate("/reports")}><Icon src={reportsIcon} alt="Report" />{expanded && "Reports & Analytics"}</NavItem>
-            <NavItem onClick={() => navigate("/settings")}><Icon src={settingsIcon} alt="Settings" />{expanded && "Settings"}</NavItem>
+            <NavItem onClick={() => navigate("/reports")}><Icon src={reportsIcon} alt="Report" /><NavText expanded={expanded}>Reports & Analytics</NavText></NavItem>
+            <NavItem onClick={() => navigate("/settings")}><Icon src={settingsIcon} alt="Settings" /><NavText expanded={expanded}>Settings</NavText></NavItem>
           </>
         )}
 
@@ -246,7 +224,7 @@ const MainSidebar = ({ role }) => {
 
       )} */}
       {/* Logout Button */}
-      <NavItem onClick={handleLogout}><Icon src={LogoutIcon} alt="logout" />{expanded && "Logout"}</NavItem>
+      <NavItem onClick={handleLogout}><Icon src={LogoutIcon} alt="logout" /><NavText expanded={expanded}>Logout</NavText></NavItem>
       </BottomContainer>
     </SidebarContainer>
   );

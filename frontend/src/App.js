@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   BrowserRouter as Router,
   Routes,
@@ -22,13 +22,15 @@ import AllWorkflowsPage from "./components/exporter/AllWorkflowsPage";
 import ManufacturerWorkflowsPage from "./components/manufacturer/ManufacturerWorkflowsPage";
 
 const ContentArea = styled.div`
-  margin-left: 240px; /* Same as sidebar width */
+  margin-left: ${(props) => (props.expanded ? "0px" : "60px")};
   margin-top: 60px;
+  transition: margin-left 0.3s ease-in-out;
 `;
 
 function App() {
   const location = useLocation(); // Get current route location
   const { user } = useUser(); // Get user from context
+  const [expanded, setExpanded] = useState(true);
 
   const hideUI = ["/", "/login", "/signup"].includes(location.pathname); // Check if the path is login or signup
 
@@ -37,7 +39,7 @@ function App() {
       {!hideUI && <Navbar />} {/* Conditionally render Navbar */}
       {!hideUI && <MainSidebar role={user?.role} />}{" "}
       {/* Conditionally render Sidebar */}
-      <ContentArea style={{ marginLeft: hideUI ? "0px" : "240px" }}>
+      <ContentArea expanded={!hideUI && expanded}>
         <Routes>
           {/* Route for the Workflow Customization Tool */}
           <Route path="/new-workflow" element={<WorkflowCustomizationTool />} />

@@ -7,13 +7,15 @@ const HeaderContainer = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px;
+  padding: 5px;
   border-bottom: 1px solid #ddd;
 `;
 
-const Title = styled.h2`
-  font-size: 24px;
+const Title = styled.h3`
+  font-size: 30px;
   font-weight: bold;
+  color: #2D3142; 
+  margin-left: 10px;
 `;
 
 const ButtonGroup = styled.div`
@@ -55,7 +57,7 @@ const Header = ({ title }) => {
           <img src={plusIcon} alt="plus" style={{ width: "18px", marginRight: "8px", color: "white" }} />
           Add Plugin
         </Button>
-              <Button onClick={() => navigate("/new-plugin")}>
+              <Button onClick={() => navigate("/new-workflow")}>
                   <img src={plusIcon} alt="plus" style={{ width: "18px", marginRight: "8px" }} />
           Create Plugin
         </Button>
