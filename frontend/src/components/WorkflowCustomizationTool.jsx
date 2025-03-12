@@ -5,6 +5,7 @@ import styled from "styled-components";
 import { v4 as uuidv4 } from "uuid";
 import { FaArrowRight } from "react-icons/fa";
 import Layout from "./MainLayout";
+import Header from "./Header";
 
 // Styled Components
 const AppContainer = styled.div`
@@ -205,13 +206,12 @@ const Button = styled.button`
 
 const TerminalContainer = styled.div`
   background-color: #2D3142;
-  color: limegreen;
+  color: white;
   padding: 10px;
   height: 250px;
   overflow-y: auto;
   font-family: monospace;
   font-size: 14px;
-  border-radius: 5px;
   margin-top: 10px;
   border: 1px solid #333;
   white-space: pre-wrap;
@@ -344,6 +344,11 @@ const WorkflowCustomizationTool = () => {
   );
 };
 
+  const formatStepsForLog = (steps) => {
+  return steps.map((step, index) => 
+    `🔹 Step ${index + 1}: ${step.pluginName} | Order: ${step.order} | Required: ${step.required_amount}`
+  ).join("\n");
+};
   
   const buildWorkflow = async () => {
     setLogs([]); // Clear logs before each run
@@ -363,9 +368,39 @@ const WorkflowCustomizationTool = () => {
     order: index + 1,
     required_amount: Number(item.required_amount) || 20, // Ensure it's a valid number
   }));
+    
+    addLog("🔍 Starting step-by-step validation...");
+    
+    for (let i = 0; i < stepsData.length; i++) {
+    const step = stepsData[i];
 
-  addLog(`✅ Workflow ID: ${workflowID}`);
-  addLog(`📝 Steps: ${JSON.stringify(stepsData, null, 2)}`);
+    addLog(`➡️ Validating Step ${i + 1}: ${step.pluginName}...`);
+    await new Promise(resolve => setTimeout(resolve, 500)); // Simulate delay
+
+    if (!step.pluginName) {
+      addLog(`❌ Validation failed: Step ${i + 1} has no plugin name.`);
+      setProgress(0);
+      return;
+    }
+    if (typeof step.order !== "number" || step.order < 1) {
+      addLog(`❌ Validation failed: Step ${i + 1} has an invalid order.`);
+      setProgress(0);
+      return;
+    }
+    if (step.required_amount < 1) {
+      addLog(`❌ Validation failed: Step ${i + 1} requires a valid amount.`);
+      setProgress(0);
+      return;
+    }
+
+    addLog(`✅ Step ${i + 1}: ${step.pluginName} validated successfully.`);
+    await new Promise(resolve => setTimeout(resolve, 300)); // Simulate delay
+    }
+    
+    addLog(`📝 All steps validated! Final workflow:\n${formatStepsForLog(stepsData)}`);
+    setProgress(50);
+
+    addLog(`✅ Workflow ID: ${workflowID}`);
 
   const payload = { steps: stepsData };
 

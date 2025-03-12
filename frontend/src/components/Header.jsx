@@ -26,7 +26,7 @@ const ButtonGroup = styled.div`
 const Button = styled.button`
   display: flex;
   align-items: center;
-  width: 150px;
+  width: 160px;
   background-color: #2D3142;
   color: white;
   padding: 10px 16px;
@@ -59,7 +59,7 @@ const Header = ({ title }) => {
         </Button>
               <Button onClick={() => navigate("/new-workflow")}>
                   <img src={plusIcon} alt="plus" style={{ width: "18px", marginRight: "8px" }} />
-          Create Plugin
+          Create Workflow
         </Button>
       </div>
     </HeaderContainer>

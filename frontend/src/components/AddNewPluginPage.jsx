@@ -4,13 +4,14 @@ import JSONViewer from "./parser/JsonViewer";
 import DSLInstructions from "./parser/InstructionsContainer";
 import Diagram from "./Diagram";
 import { generateGoCode } from "../utils/goGenerator";
+import { generateDSL } from "../utils/dslGenerator";
 import axios from 'axios';
 
 // Styled components for layout
 const AppContainer = styled.div`
   display: flex;
   flex-direction: column;
-  height: 100%;
+  height: 100vh;
   overflow: hidden; /* Prevents scrolling */
 `;
 
@@ -35,6 +36,7 @@ const SidebarContainer = styled.div`
   padding: 10px;
   box-sizing: border-box;
   background-color: #d3d2d0;
+  margin-left: 80px;
 `;
 
 const InputContainer = styled.div`
@@ -63,6 +65,9 @@ const PaletteContainer = styled.div`
 const DiagramContainer = styled.div`
   flex: 1;
   position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 `;
 
 const JSONViewerContainer = styled.div`
@@ -72,10 +77,32 @@ const JSONViewerContainer = styled.div`
 `;
 
 const DSLContainer = styled.div`
+  width: 250px;
   border-right: 1px solid #3e3d3c;
   display: flex;
   flex-direction: column; /* Ensures children stack vertically */
   overflow: hidden; /* Prevents overflow issues */
+`;
+
+const TerminalContainer = styled.div`
+  width: 100%;
+  height: 200px;
+  background-color: #2D3142;
+  color: limegreen;
+  font-family: monospace;
+  padding: 10px;
+  overflow-y: auto;
+  border-top: 1px solid #2D3142;
+  position: relative;
+`;
+
+const ResizeHandle = styled.div`
+  height: 5px;
+  background: #555;
+  cursor: ns-resize;
+  position: absolute;
+  top: -5px;
+  width: 100%;
 `;
 
 const ExportButton = styled.button`
@@ -116,6 +143,9 @@ const AddNewPluginPage = () => {
   const [model, setModel] = useState(null);
   const [pluginName, setPluginName] = useState("");
   const [sensorName, setSensorName] = useState("");
+  const [terminalHeight, setTerminalHeight] = useState(100);
+  const [isResizing, setIsResizing] = useState(false);
+  const [terminalLogs, setTerminalLogs] = useState([]);
 
   const handleModelChange = (modelData) => {
     if (!modelData) {
@@ -317,8 +347,43 @@ func main() {
 
   useEffect(() => {
   console.log("Current model state:", model);
-}, [model]);
+  }, [model]);
+  
+  const logToTerminal = (message) => {
+    setTerminalLogs((prevLogs) => [...prevLogs, message]);
+  };
 
+  const handleGenerateDSL = () => {
+    setTerminalLogs(["Starting DSL validation..."]);
+    try {
+      const result = generateDSL(model, logToTerminal);
+      setTerminalLogs((prevLogs) => [...prevLogs, result]);
+    } catch (error) {
+      setTerminalLogs((prevLogs) => [...prevLogs, `Error: ${error.message}`]);
+    }
+  };
+
+  const handleMouseDown = (e) => {
+    e.preventDefault();
+    setIsResizing(true);
+
+    const startY = e.clientY;
+    const startHeight = terminalHeight;
+
+    const onMouseMove = (event) => {
+      const newHeight = Math.max(50, Math.min(250, startHeight + (startY - event.clientY)));
+      setTerminalHeight(newHeight);
+    };
+
+    const onMouseUp = () => {
+      setIsResizing(false);
+      document.removeEventListener("mousemove", onMouseMove);
+      document.removeEventListener("mouseup", onMouseUp);
+    };
+
+    document.addEventListener("mousemove", onMouseMove);
+    document.addEventListener("mouseup", onMouseUp);
+  };
 
   return (
     <AppContainer>
@@ -348,17 +413,21 @@ func main() {
         {/* Diagram Canvas */}
         <DiagramContainer>
           <ButtonContainer>
-          <SubmitButton onClick={handleGenerateCode}>
+          <ExportButton onClick={() => window.exportModel()}>
+            Export Model
+            </ExportButton>
+          <SubmitButton onClick={handleGenerateDSL}>
               Save Plugin
             </SubmitButton>
           </ButtonContainer>
           <Diagram onExport={handleModelChange} model={model} />
           {/* Generate Go Code Button */}
-          <ButtonContainer>
-          <ExportButton onClick={() => window.exportModel()}>
-            Export Model
-            </ExportButton>
-          </ButtonContainer>
+          <TerminalContainer height={terminalHeight}>
+             <ResizeHandle onMouseDown={handleMouseDown} />
+            {terminalLogs.map((log, index) => (
+              <div key={index}>{log}</div>
+            ))}
+          </TerminalContainer>
         </DiagramContainer>
 
         {/* JSON Viewer */}
