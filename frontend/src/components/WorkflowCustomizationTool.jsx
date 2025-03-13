@@ -4,11 +4,22 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import styled from "styled-components";
 import { v4 as uuidv4 } from "uuid";
 import { FaArrowRight } from "react-icons/fa";
+import Layout from "./MainLayout";
+import Header from "./Header";
 
 // Styled Components
 const AppContainer = styled.div`
   display: flex;
-  height: calc(100vh - 50px); /* Full viewport height */
+  flex-direction: row;
+  height: calc(100vh - 60px); /* Full viewport height */
+`;
+
+const MainContent = styled.div`
+  display: flex;
+  flex-direction: column;
+  flex: 1; /* Takes remaining space */
+  width: 100%;
+  box-sizing: border-box;
 `;
 
 const WorkflowContainer = styled.div`
@@ -43,7 +54,7 @@ const BuildWorkflowButton = styled.button`
 `;
 
 const Sidebar = styled.div`
-  width: 200px; /* Sidebar width */
+  width: 200px; 
   background-color: #d3d2d0;
   border-right: 1px solid #ccc;
   padding: 20px;
@@ -53,8 +64,11 @@ const Sidebar = styled.div`
 const Canvas = styled.div`
   flex: 1; /* Takes the remaining space */
   background-color: #ffffff;
-  padding: 20px;
   box-sizing: border-box;
+  display: flex;
+  flex-direction: column; /* Ensure terminal stacks properly */
+  padding: 10px;
+  overflow: auto;
 `;
 
 const AddPluginButton = styled.button`
@@ -77,7 +91,6 @@ const Column = styled.div`
 
 const ColumnCanvas = styled.div`
   display: flex;
-  margin-top: 100px;
   gap: 10px; /* Add spacing between items */
   padding: 10px;
   background-color: #f0f0f0;
@@ -191,6 +204,30 @@ const Button = styled.button`
   }
 `;
 
+const TerminalContainer = styled.div`
+  background-color: #2D3142;
+  color: white;
+  padding: 10px;
+  height: 250px;
+  overflow-y: auto;
+  font-family: monospace;
+  font-size: 14px;
+  margin-top: 10px;
+  border: 1px solid #333;
+  white-space: pre-wrap;
+  display: flex;
+  flex-direction: column;
+  width: 100%; 
+  min-width: 0;
+`;
+
+const TerminalLog = styled.div`
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  opacity: ${(props) => (props.visible ? 1 : 0)};
+  transition: opacity 0.3s ease-in-out;
+`;
+
 const WorkflowCustomizationTool = () => {
   const navigate = useNavigate();
   const location = useLocation(); 
@@ -232,6 +269,13 @@ const WorkflowCustomizationTool = () => {
     inputs: [{ label: "EC Level:", parameter: "targetECLevel" }],
     },
   };
+
+  const [logs, setLogs] = useState([]);
+  const [progress, setProgress] = useState(0);
+
+  const addLog = (message) => {
+  setLogs((prevLogs) => [...prevLogs, message]);
+};
 
   useEffect(() => {
     if (location.state?.workflow_id) {
@@ -275,63 +319,157 @@ const WorkflowCustomizationTool = () => {
 
 //   navigate("/workflow-details", { state: { workflow_id: workflowID, steps: stepsData }});
   // };
+
+  const TerminalOutput = ({ logs }) => {
+    const [displayedLogs, setDisplayedLogs] = useState([]);
+  const [index, setIndex] = useState(0);
+
+  useEffect(() => {
+    if (index < logs.length) {
+      const timer = setTimeout(() => {
+        setDisplayedLogs((prevLogs) => [...prevLogs, logs[index]]);
+        setIndex(index + 1);
+      }, 500); // Adjust the delay (milliseconds) for printing effect
+
+      return () => clearTimeout(timer);
+    }
+  }, [index, logs]);
+    
+  return (
+    <TerminalContainer>
+      {displayedLogs.map((log, i) => (
+        <TerminalLog key={i} visible>{log}</TerminalLog>
+      ))}
+    </TerminalContainer>
+  );
+};
+
+  const formatStepsForLog = (steps) => {
+  return steps.map((step, index) => 
+    `🔹 Step ${index + 1}: ${step.pluginName} | Order: ${step.order} | Required: ${step.required_amount}`
+  ).join("\n");
+};
   
   const buildWorkflow = async () => {
+    setLogs([]); // Clear logs before each run
+    setProgress(10);
+    
   if (plugins.column2.items.length === 0) {
-    alert("You must add at least one step.");
+    addLog("❌ Error: You must add at least one step.");
     return;
-  }
+    }
+    
+    addLog("📡 Preparing workflow data...");
+    setProgress(30);
 
   // Build steps data from the canvas items
   const stepsData = plugins.column2.items.map((item, index) => ({
     pluginName: pluginsData[item.id]?.name || "Unknown Plugin",
     order: index + 1,
-    required_amount: item.required_amount || "",
+    required_amount: Number(item.required_amount) || 20, // Ensure it's a valid number
   }));
-
-  console.log("Workflow ID:", workflowID);
-  console.log("Steps:", stepsData);
-
-    const payload = { steps: stepsData };
     
-    console.log("Navigating to workflow-details with:", stepsData);
+    addLog("🔍 Starting step-by-step validation...");
+    
+    for (let i = 0; i < stepsData.length; i++) {
+    const step = stepsData[i];
 
-  // Check if we are editing an existing workflow (i.e. workflow_id is present)
-  if (location.state?.workflow_id) {
-    try {
-      const response = await fetch(
-        `http://localhost:5000/api/workflow/${workflowID}`,
-        {
-          method: "PUT", // or PATCH depending on your backend implementation
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        }
-      );
+    addLog(`➡️ Validating Step ${i + 1}: ${step.pluginName}...`);
+    await new Promise(resolve => setTimeout(resolve, 500)); // Simulate delay
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to update workflow");
-      }
-
-      const data = await response.json();
-      console.log("Update successful:", data);
-      console.log("Navigating to workflow-details with:", stepsData);
-      // After successful update, navigate to the details page
-      navigate("/workflow-details", {
-        state: { workflow_id: workflowID, steps: stepsData },
-      });
-
-      // Navigate to workflow-details while passing required_amount in state
-  navigate("/workflow-details", { state: { workflow_id: workflowID, steps: stepsData } });
-    } catch (error) {
-      console.error("Error updating workflow:", error);
-      alert(`Error updating workflow: ${error.message}`);
+    if (!step.pluginName) {
+      addLog(`❌ Validation failed: Step ${i + 1} has no plugin name.`);
+      setProgress(0);
+      return;
     }
-  } else {
-    // In create mode: navigate to the workflow-details page (where you might show a preview or further options)
-    navigate("/workflow-details", { state: { workflow_id: workflowID, steps: stepsData } });
+    if (typeof step.order !== "number" || step.order < 1) {
+      addLog(`❌ Validation failed: Step ${i + 1} has an invalid order.`);
+      setProgress(0);
+      return;
+    }
+    if (step.required_amount < 1) {
+      addLog(`❌ Validation failed: Step ${i + 1} requires a valid amount.`);
+      setProgress(0);
+      return;
+    }
+
+    addLog(`✅ Step ${i + 1}: ${step.pluginName} validated successfully.`);
+    await new Promise(resolve => setTimeout(resolve, 300)); // Simulate delay
+    }
+    
+    addLog(`📝 All steps validated! Final workflow:\n${formatStepsForLog(stepsData)}`);
+    setProgress(50);
+
+    addLog(`✅ Workflow ID: ${workflowID}`);
+
+  const payload = { steps: stepsData };
+
+    try {
+      addLog("🔍 Validating workflow with backend...");
+      setProgress(50);
+    // 🔹 Step 1: Validate Workflow Before Updating/Creating
+    const validateResponse = await fetch("http://localhost:5000/api/workflow/validate-workflow", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    const validateData = await validateResponse.json();
+
+    if (!validateResponse.ok) {
+      throw new Error(validateData.message || "Workflow validation failed.");
+    }
+
+      addLog("✅ Validation successful!...");
+      setProgress(80);
+
+    console.log("Validation successful! Proceeding with update/create.");
+
+    // 🔹 Step 2: If editing an existing workflow, update it
+    if (location.state?.workflow_id) {
+      try {
+        addLog(`🔄 Updating workflow ${workflowID}...`);
+        const response = await fetch(
+          `http://localhost:5000/api/workflow/${workflowID}`,
+          {
+            method: "PUT", // or PATCH depending on your backend implementation
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          }
+        );
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || "Failed to update workflow");
+        }
+
+        const data = await response.json();
+        console.log("Update successful:", data);
+
+        addLog("✅ Workflow updated successfully!");
+        setProgress(100);
+        // After successful update, navigate to the details page
+        // navigate("/workflow-details", { state: { workflow_id: workflowID, steps: stepsData } });
+
+      } catch (error) {
+        console.error("Error updating workflow:", error);
+        alert(`Error updating workflow: ${error.message}`);
+      }
+    } else {
+      addLog("🆕 Creating new workflow...");
+      setProgress(100);
+      // 🔹 Step 3: If creating a new workflow, navigate to workflow-details
+      // navigate("/workflow-details", { state: { workflow_id: workflowID, steps: stepsData } });
+    }
+
+    } catch (error) {
+      addLog(`❌ Error: ${error.message}`);
+      setProgress(0);
+    console.error("Error validating workflow:", error);
+    alert(`Error: ${error.message}`);
   }
 };
+
 
   const onDragEnd = (result) => {
     const { source, destination } = result;
@@ -421,6 +559,7 @@ const WorkflowCustomizationTool = () => {
 
   return (
     <DragDropContext onDragEnd={onDragEnd}>
+      <Layout role="exporter">
       <AppContainer>
         {/* Sidebar */}
         <Sidebar>
@@ -442,8 +581,9 @@ const WorkflowCustomizationTool = () => {
               </Column>
             )}
           </Droppable>
-        </Sidebar>
-
+          </Sidebar>
+          
+          <MainContent>
         {/* Workflow Canvas */}
         <Canvas>
           <CanvasHeadingContainer>
@@ -507,9 +647,12 @@ const WorkflowCustomizationTool = () => {
                 {provided.placeholder}
               </ColumnCanvas>
             )}
-          </Droppable>
+            </Droppable>
         </Canvas>
+            <TerminalOutput logs={logs} />
+          </MainContent>
       </AppContainer>
+      </Layout>
     </DragDropContext>
   );
 };

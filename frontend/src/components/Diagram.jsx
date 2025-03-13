@@ -5,7 +5,7 @@ import * as go from "gojs";
 const DiagramContainer = styled.div`
   position: relative;
   flex: 1;
-  height: calc(100vh - 200px);
+  height: calc(100vh - 300px);
   border-left: 1px solid black;
   border-right: 1px solid black;
 `;

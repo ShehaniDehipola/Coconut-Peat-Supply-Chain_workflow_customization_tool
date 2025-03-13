@@ -5,129 +5,113 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsi
 import { Heatmap, XAxis as XAxisHeatmap, YAxis as YAxisHeatmap, Tooltip as TooltipHeatmap } from 'recharts';
 import { useUser } from '../../context/UserContext';
 import axios from "axios";
+import Layout from '../MainLayout';
+import Header from '../Header';
 
 const Container = styled.div`
+  display: flex;
   padding: 20px;
-  max-width: 1200px;
+  max-width: 1400px;
   margin: auto;
+  gap: 20px;
 `;
 
-const WorkflowHeader = styled.h2`
-  text-align: flex-start;
+const Title = styled.h1`
+  font-size: 18px;
+  font-weight: bold;
+  color: #2D3142; 
+  margin-bottom: 20px;
 `;
 
-const DashboardGrid = styled.div`
-  display: grid;
-  grid-template-columns: 2fr 3fr;
-  gap: 10px;
-  margin-bottom: 30px;
+const LeftSection = styled.div`
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+`;
+
+const RightSection = styled.div`
+  flex: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 `;
 
 const MetricsContainer = styled.div`
-  display: flex;
-  justify-content: space-between;
-  gap: 20px;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+`;
+
+const MetricCard = styled.div`
   padding: 10px;
-  background: #f8f9fa;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  text-align: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+
+  ${({ type }) => {
+    switch (type) {
+      case 'Total':
+        return `border: 2px solid #dc3545; color: #dc3545;`;
+      case 'Pending':
+        return `border: 2px solid #ffc107; color: #ffc107;`;
+      case 'InProgress':
+        return `border: 2px solid #17a2b8; color: #17a2b8;`;
+      case 'Completed':
+        return `border: 2px solid #28a745; color: #28a745;`;
+      default:
+        return `border: 2px solid #6c757d; color: #6c757d;`;
+    }
+  }}
+`;
+
+const ChartContainer = styled.div`
+  padding: 16px;
+  background-color: #f8f9fa;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 `;
 
 const WorkflowContainer = styled.div`
-  padding: 10px;
-  background: #e9ecef;
+  padding: 16px;
+  background-color: #f8f9fa;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 `;
 
-
-const MetricCard = styled.div`
-  flex: 1;
-  padding: 12px;
-  background-color: rgba(45, 49, 66, 0.2);
-  border-radius: 8px;
-  text-align: center;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-
-  /* Dynamically change border and background color based on type */
-  ${({ type }) => {
-    switch (type) {
-      case 'Total':
-        return `border: 2px solid #dc3545; background-color: rgba(220, 53, 69, 0.1); color: #dc3545;`; // Red for Total Orders
-      case 'Pending':
-        return `border: 2px solid #ffc107; background-color: rgba(255, 193, 7, 0.1); color: #ffc107;`; // Yellow for Pending
-      case 'InProgress':
-        return `border: 2px solid #17a2b8; background-color: rgba(23, 162, 184, 0.1); color: #17a2b8;`; // Blue for In Progress
-      case 'Completed':
-        return `border: 2px solid #28a745; background-color: rgba(40, 167, 69, 0.1); color: #28a745;`; // Green for Completed
-      default:
-        return `border: 2px solid #6c757d; background-color: rgba(108, 117, 125, 0.1); color: #6c757d;`; // Grey for default
-    }
-  }}
-`;
-
-const MainContent = styled.div`
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px;
-  margin-bottom: 20px;
-`;
-
-const WorkflowList = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-`;
-
-const WorkflowCard = styled.div`
+const ScrollableWorkflowList = styled.div`
+  max-height: 260px;
+  overflow-y: auto;
   border: 1px solid #ccc;
   border-radius: 8px;
-  padding: 12px;
-  background: white;
+  padding: 16px;
+  background-color: #f8f9fa;
+`;
+
+const WorkflowItem = styled.div`
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #ddd;
 `;
 
 const Button = styled.button`
-  background-color: #2D3142;
-  color: white;
-  padding: 8px 16px;
-  border: none;
+  margin: 5px;
+  padding: 8px 20px;
   border-radius: 4px;
   cursor: pointer;
-
-  &:hover {
-    background-color: #0056b3;
-  }
-`;
-
-const StatusBadge = styled.span`
-  padding: 0.3rem 0.6rem;
-  border-radius: 0.25rem;
+  font-weight: bold;
+  background-color: #2D3142;
   color: #fff;
-  background-color: ${({ status }) => {
-    switch (status) {
-      case 'pending':
-        return '#ffc107';
-      default:
-        return '#6c757d';
-    }
-  }};
+  border: none;
 `;
 
-const WorkerHeatmapContainer = styled.div`
-  margin-top: 20px;
-`;
 
 export const ManufacturerDashboard = () => {
   const navigate = useNavigate();
   const { user } = useUser();
   const [workflows, setWorkflows] = useState([]);
-
-  useEffect(() => {
-    console.log("User from Context:", user);
-  }, [user]);
 
   useEffect(() => {
     if (!user || !user.user_id) return;
@@ -169,14 +153,7 @@ export const ManufacturerDashboard = () => {
     ],
   };
 
-  // useEffect(() => {
-  //   setWorkflows([
-  //     { name: 'Workflow A', stepsCompleted: 2, totalSteps: 4 ,  status: 'Pending'},
-  //     { name: 'Workflow B', stepsCompleted: 3, totalSteps: 5,  status: 'Pending'},
-  //   ]);
-  // }, []);
-
-  const updateWorkflowStatus = (index) => {
+   const updateWorkflowStatus = (index) => {
     navigate("/each-workflow")
   };
 
@@ -196,64 +173,42 @@ const workerProductivityData = [
   { worker: "Worker E", day1: 7, day2: 5, day3: 6, day4: 8, day5: 4 }
 ];
 
-
   return (
-    <Container>
-      <WorkflowHeader>Dashboard</WorkflowHeader>
-      <MetricsContainer>
-        <MetricCard type="Total">
-          <h3>Total Workflows</h3>
-          <p>{totalWorkflows}</p>
-        </MetricCard>
-        <MetricCard type="Pending">
-          <h3>Pending</h3>
-          <p>{statusCounts.Pending}</p>
-        </MetricCard>
-        <MetricCard type="InProgress">
-          <h3>In Progress</h3>
-          <p>{statusCounts['In Progress']}</p>
-        </MetricCard>
-        <MetricCard type="Completed">
-          <h3>Completed</h3>
-          <p>{statusCounts.Completed}</p>
-        </MetricCard>
-      </MetricsContainer>
+    <Layout role="manufacturer">
+      <Header title="Dashboard" />
+      <Container>
+        <LeftSection>
+          <MetricsContainer>
+            <MetricCard type="Total">Total: {totalWorkflows}</MetricCard>
+            <MetricCard type="Pending">Pending: {statusCounts.Pending || 0}</MetricCard>
+            <MetricCard type="InProgress">In Progress: {statusCounts['In Progress'] || 0}</MetricCard>
+            <MetricCard type="Completed">Completed: {statusCounts.Completed || 0}</MetricCard>
+          </MetricsContainer>
+          <ChartContainer>
+            <Title>Workers Productivity </Title>
+            <table width="100%" height={200}>
+        <tbody>
+          {workerProductivityData.map((row, index) => (
+            <tr key={index}>
+              <td>{row.worker}</td>
+              {[row.day1, row.day2, row.day3, row.day4, row.day5].map((value, i) => (
+                <td key={i} style={{ backgroundColor: `rgba(216, 149, 39, ${value / 10})` }}>{value}</td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+          </ChartContainer>
+          <WorkflowContainer>
+            <Title>Alerts</Title>
+            <p>No alerts at this time.</p>
+          </WorkflowContainer>
+        </LeftSection>
 
-      <MainContent>
-      <WorkflowContainer>
-          <h3>New Workflows Assigned</h3>
-          <WorkflowList>
-            {workflows.length > 0 ? (
-          workflows.map((wf) => (
-            <WorkflowCard key={wf.workflow_id}>
-              <div>
-                <p>{wf.workflow_id}</p> 
-              </div>
-              <StatusBadge status="pending">Pending</StatusBadge>
-              {/* <Button onClick={() => alert(`View Workflow ${wf.workflow_id}`)}>View</Button> */}
-            </WorkflowCard>
-          ))
-        ) : (
-          <p>No pending workflows found.</p>
-        )}
-
-          </WorkflowList>
-        </WorkflowContainer>
-      {/* {workflows.map((workflow, index) => (
-        <WorkflowCard key={index}>
-          <div>
-            <h3>{workflow.name}</h3>
-            <p>Steps Completed: {workflow.stepsCompleted} / {workflow.totalSteps}</p>
-          </div>
-          <Button onClick={() => updateWorkflowStatus(index)}>Start</Button>
-        </WorkflowCard>
-      ))} */}
-
-        <div>
-          
-        
-      <h3>Production Efficiency Over Time</h3>
-      <ResponsiveContainer width="100%" height={300}>
+        <RightSection>
+          <ChartContainer>
+            <Title>Production Efficiency Over Time</Title>
+            <ResponsiveContainer width="100%" height={200}>
         <LineChart data={productionEfficiencyData} margin={{ top: 10, right: 30, left: 0, bottom: 10 }}>
           <CartesianGrid strokeDasharray="3 5" />
           <XAxis dataKey="date" />
@@ -266,26 +221,22 @@ const workerProductivityData = [
           <Line type="monotone" dataKey="Drying" stroke="#ff7300" />
         </LineChart>
           </ResponsiveContainer>
-          </div>
-
-      </MainContent>
-
-      <WorkerHeatmapContainer>
-
-      <h3>Worker Productivity Heatmap</h3>
-      <table width="100%" height={300}>
-        <tbody>
-          {workerProductivityData.map((row, index) => (
-            <tr key={index}>
-              <td>{row.worker}</td>
-              {[row.day1, row.day2, row.day3, row.day4, row.day5].map((value, i) => (
-                <td key={i} style={{ backgroundColor: `rgba(216, 149, 39, ${value / 10})` }}>{value}</td>
+          </ChartContainer>
+          <WorkflowContainer>
+            <Title>Assigned Workflows</Title>
+            <ScrollableWorkflowList>
+              {workflows.map((workflow) => (
+                <WorkflowItem key={workflow.id}>
+                  <span>{workflow.workflow_id}</span>
+                  <Button onClick={() => alert(`View ${workflow.workflowId}`)}>
+                  View
+                </Button>
+                </WorkflowItem>
               ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      </WorkerHeatmapContainer>
-    </Container>
+            </ScrollableWorkflowList>
+          </WorkflowContainer>
+        </RightSection>
+      </Container>
+    </Layout>
   );
 };

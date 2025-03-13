@@ -1,6 +1,9 @@
-export function generateDSL(json) {
+export function generateDSL(json, logCallback, setInstructions) {
   const { nodes, links } = json;
-  let instructions = "";
+  let instructions = '';
+
+  // Log start of validation
+  logCallback('Processing: Validating JSON structure...');
 
   // Validation Step 1: Check that 'nodes' and 'links' are valid arrays
   if (!Array.isArray(nodes)) {
@@ -9,8 +12,10 @@ export function generateDSL(json) {
   if (!Array.isArray(links)) {
     throw new Error("Invalid input: 'links' must be an array.");
   }
+  logCallback('Validation Passed: JSON structure is valid.');
 
   // Validation Step 2: Validate nodes
+  logCallback('Processing: Validating nodes...');
   const nodeKeys = new Set();
   nodes.forEach((node) => {
     if (!node.key) throw new Error(`Node with missing 'key' found.`);
@@ -21,7 +26,7 @@ export function generateDSL(json) {
     // Check for valid category and text
     if (
       !node.category ||
-      !["Start", "Process", "Decision", "End"].includes(node.category)
+      !['Start', 'Process', 'Decision', 'End'].includes(node.category)
     ) {
       throw new Error(`Invalid node category found: ${node.category}`);
     }
@@ -30,8 +35,10 @@ export function generateDSL(json) {
         `Node with key ${node.key} is missing 'text' description.`
       );
   });
+  logCallback('Validation Passed: Nodes are correctly structured.');
 
   // Validation Step 3: Validate links
+  logCallback('Processing: Validating links...');
   links.forEach((link) => {
     if (!link.from || !link.to) {
       throw new Error(
@@ -46,29 +53,36 @@ export function generateDSL(json) {
     if (!toNode)
       throw new Error(`Link references non-existing node 'to': ${link.to}`);
   });
+  logCallback('Validation Passed: Links are correctly structured.');
 
   // Validation Step 4: Ensure exactly one 'Start' node
-  const startNode = nodes.find((node) => node.category === "Start");
+  logCallback('Processing: Checking start node...');
+  const startNode = nodes.find((node) => node.category === 'Start');
   if (!startNode) {
     throw new Error("Missing 'Start' node.");
   }
+  logCallback('Validation Passed: Start node exists.');
+
   if (links.filter((link) => link.from === startNode.key).length === 0) {
-    throw new Error("Start node must have outgoing links.");
+    throw new Error('Start node must have outgoing links.');
   }
-  instructions += "Start the process\n";
+  instructions += 'Start the process\n';
 
   // Validation Step 5: Ensure exactly one 'End' node
-  const endNodes = nodes.filter((node) => node.category === "End");
+  logCallback('Processing: Checking end node...');
+  const endNodes = nodes.filter((node) => node.category === 'End');
   if (endNodes.length !== 1) {
     throw new Error("There should be exactly one 'End' node.");
   }
+  logCallback('Validation Passed: End node exists.');
   if (links.some((link) => link.from === endNodes[0].key)) {
     throw new Error("'End' node should not have outgoing links.");
   }
 
   // Validation Step 6: Ensure each Decision node has at least 2 outgoing links
+  logCallback('Processing: Checking decision nodes...');
   nodes
-    .filter((node) => node.category === "Decision")
+    .filter((node) => node.category === 'Decision')
     .forEach((decisionNode) => {
       const outgoingLinks = links.filter(
         (link) => link.from === decisionNode.key
@@ -78,6 +92,9 @@ export function generateDSL(json) {
           `Decision node with key ${decisionNode.key} must have at least two outgoing links.`
         );
       }
+      logCallback(
+        'Validation Passed: Decision nodes have correct outgoing links.'
+      );
 
       // Validate condition format
       if (!/^.*(==|!=|>=|<=).*$/.test(decisionNode.text)) {
@@ -88,14 +105,16 @@ export function generateDSL(json) {
     });
 
   // Validation Step 7: Check for orphaned nodes
+  logCallback('Processing: Checking for orphaned nodes...');
   const allNodeKeys = new Set(nodes.map((node) => node.key));
   const allLinkedKeys = new Set(links.flatMap((link) => [link.from, link.to]));
   const orphanedNodes = [...allNodeKeys].filter(
     (key) => !allLinkedKeys.has(key)
   );
   if (orphanedNodes.length > 0) {
-    throw new Error(`Orphaned nodes found: ${orphanedNodes.join(", ")}`);
+    throw new Error(`Orphaned nodes found: ${orphanedNodes.join(', ')}`);
   }
+  logCallback('Validation Passed: No orphaned nodes found.');
 
   // Create a map of nodes for faster lookup
   const nodeMap = nodes.reduce((map, node) => {
@@ -114,10 +133,10 @@ export function generateDSL(json) {
 
     // Replace condition symbols with user-friendly text
     const conditionMap = {
-      "==": "equal to",
-      "!=": "not equal to",
-      ">=": "greater than or equal to",
-      "<=": "less than or equal to",
+      '==': 'equal to',
+      '!=': 'not equal to',
+      '>=': 'greater than or equal to',
+      '<=': 'less than or equal to',
     };
 
     conditionText = conditionText.replace(
@@ -127,21 +146,26 @@ export function generateDSL(json) {
 
     instructions += `Decision: Is ${conditionText}?\n`;
 
+    logCallback(
+      `Processing: Decision node '${nodeKey}' condition: ${conditionText}`
+    );
+
     outgoingLinks.forEach((link, index) => {
       const targetNode = nodeMap[link.to];
       if (targetNode) {
         const action =
-          targetNode.category === "End"
-            ? "End the process"
+          targetNode.category === 'End'
+            ? 'End the process'
             : index === 0
             ? `Step: ${targetNode.text}`
             : `Repeat the ${targetNode.text}`;
-        instructions += `  ${index === 0 ? "Yes" : "No"} -> ${action}\n`;
+        instructions += `  ${index === 0 ? 'Yes' : 'No'} -> ${action}\n`;
       }
     });
   };
 
   // Traverse the workflow starting from the Start node
+  logCallback('Processing: Traversing workflow...');
   function traverse(nodeKey, visited = new Set()) {
     if (visited.has(nodeKey)) return; // Prevent infinite loops
     visited.add(nodeKey);
@@ -150,13 +174,15 @@ export function generateDSL(json) {
     if (!currentNode) return;
 
     // Handle node types
-    if (currentNode.category === "Process") {
+    if (currentNode.category === 'Process') {
       instructions += `Step: ${currentNode.text}\n`;
-    } else if (currentNode.category === "Decision") {
+      logCallback(`Processing Step: ${currentNode.text}`);
+    } else if (currentNode.category === 'Decision') {
       handleDecisionNode(nodeKey);
       return; // Skip further traversal for decision nodes
-    } else if (currentNode.category === "End") {
-      instructions += "End the process\n";
+    } else if (currentNode.category === 'End') {
+      instructions += 'End the process\n';
+      logCallback('Processing: End node reached.');
       return;
     }
 
@@ -166,6 +192,11 @@ export function generateDSL(json) {
 
   // Start traversal from the Start node
   traverse(startNode.key);
+  logCallback('Validation Completed: All checks passed.');
+
+  logCallback('---Workflow generated Successfully---');
+
+  setInstructions(instructions);
 
   return instructions;
 }
