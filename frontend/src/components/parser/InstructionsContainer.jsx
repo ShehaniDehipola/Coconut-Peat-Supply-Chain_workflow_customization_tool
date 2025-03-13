@@ -76,7 +76,7 @@ const TextArea = styled.textarea`
   min-height: 250px; /* Ensures a reasonable minimum height */
 `;
 
-const DSLInstructions = ({ model, onUpdateModel }) => {
+const DSLInstructions = ({ model, onUpdateModel, logToTerminal }) => {
   const [activeTab, setActiveTab] = useState("DSL Editor");
   const [instructions, setInstructions] = useState("");
   const [preview, setPreview] = useState("");
@@ -84,8 +84,9 @@ const DSLInstructions = ({ model, onUpdateModel }) => {
   // Generate DSL from the provided model when the component loads
   React.useEffect(() => {
     if (model) {
+      logToTerminal("Generating DSL from Flowchart...");
       try {
-        const dsl = generateDSL(model); // Use the algorithm to generate DSL
+        const dsl = generateDSL(model, logToTerminal, setInstructions); // Use the algorithm to generate DSL
         setInstructions(dsl);
         setPreview(dsl);
       } catch (error) {
@@ -97,11 +98,13 @@ const DSLInstructions = ({ model, onUpdateModel }) => {
 
   // Handle updates to the instructions
   const handleUpdate = () => {
+    logToTerminal("Parsing DSL Instructions to generate Flowchart...");
     try {
       const updatedJSON = generateJSON(instructions); // Convert DSL to JSON
       onUpdateModel(updatedJSON); // Pass the updated JSON back to the parent
     } catch (error) {
       const errorMessage = `Error: ${error.message}`;
+      logToTerminal(errorMessage);
       setInstructions(errorMessage);
       setPreview(errorMessage);
     }

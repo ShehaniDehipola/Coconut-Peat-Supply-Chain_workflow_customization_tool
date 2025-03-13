@@ -55,7 +55,7 @@ const Header = ({ title }) => {
       <div style={{ display: "flex", gap: "10px" }}>
         <Button onClick={() => navigate("/add-plugin")}>
           <img src={plusIcon} alt="plus" style={{ width: "18px", marginRight: "8px", color: "white" }} />
-          Add Plugin
+          Add New Plugin
         </Button>
               <Button onClick={() => navigate("/new-workflow")}>
                   <img src={plusIcon} alt="plus" style={{ width: "18px", marginRight: "8px" }} />

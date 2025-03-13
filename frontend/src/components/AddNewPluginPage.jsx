@@ -16,6 +16,9 @@ const AppContainer = styled.div`
 `;
 
 const ButtonContainer = styled.div`
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
   padding: 5px;
   text-align: right;
   border-left: 1px solid #2D3142;
@@ -146,6 +149,7 @@ const AddNewPluginPage = () => {
   const [terminalHeight, setTerminalHeight] = useState(100);
   const [isResizing, setIsResizing] = useState(false);
   const [terminalLogs, setTerminalLogs] = useState([]);
+  const [instructions, setInstructions] = useState("");
 
   const handleModelChange = (modelData) => {
     if (!modelData) {
@@ -341,8 +345,10 @@ func main() {
   };
 
   const handleUpdateModel = (updatedModel) => {
+    logToTerminal("Updating flowchart with validated instructions...");
     console.log("updated model", model)
     setModel(updatedModel); // Update the model state
+    logToTerminal("Flowchart updated successfully!");
   };
 
   useEffect(() => {
@@ -356,7 +362,7 @@ func main() {
   const handleGenerateDSL = () => {
     setTerminalLogs(["Starting DSL validation..."]);
     try {
-      const result = generateDSL(model, logToTerminal);
+      const result = generateDSL(model, logToTerminal, setInstructions);
       setTerminalLogs((prevLogs) => [...prevLogs, result]);
     } catch (error) {
       setTerminalLogs((prevLogs) => [...prevLogs, `Error: ${error.message}`]);
@@ -416,7 +422,7 @@ func main() {
           <ExportButton onClick={() => window.exportModel()}>
             Export Model
             </ExportButton>
-          <SubmitButton onClick={handleGenerateDSL}>
+          <SubmitButton onClick={handleGenerateCode}>
               Save Plugin
             </SubmitButton>
           </ButtonContainer>
@@ -430,14 +436,9 @@ func main() {
           </TerminalContainer>
         </DiagramContainer>
 
-        {/* JSON Viewer */}
-        {/* <JSONViewerContainer>
-          <JSONViewer model={model} />
-        </JSONViewerContainer> */}
-
         {/* DSL Instructions */}
         <DSLContainer>
-          <DSLInstructions model={model} onUpdateModel={handleUpdateModel} />
+          <DSLInstructions model={model} onUpdateModel={handleUpdateModel} logToTerminal={logToTerminal}  setInstructions={setInstructions} />
         </DSLContainer>
       </MainContainer>
     </AppContainer>

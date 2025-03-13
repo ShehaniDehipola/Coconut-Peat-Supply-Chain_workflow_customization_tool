@@ -1,4 +1,4 @@
-export function generateDSL(json, logCallback) {
+export function generateDSL(json, logCallback, setInstructions) {
   const { nodes, links } = json;
   let instructions = '';
 
@@ -193,6 +193,10 @@ export function generateDSL(json, logCallback) {
   // Start traversal from the Start node
   traverse(startNode.key);
   logCallback('Validation Completed: All checks passed.');
+
+  logCallback('---Workflow generated Successfully---');
+
+  setInstructions(instructions);
 
   return instructions;
 }
