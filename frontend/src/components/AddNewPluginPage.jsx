@@ -11,7 +11,7 @@ import axios from 'axios';
 const AppContainer = styled.div`
   display: flex;
   flex-direction: column;
-  height: 100vh;
+  height: calc(100vh - 60px);
   overflow: hidden; /* Prevents scrolling */
 `;
 
@@ -21,8 +21,6 @@ const ButtonContainer = styled.div`
   gap: 10px;
   padding: 5px;
   text-align: right;
-  border-left: 1px solid #2D3142;
-  border-right: 1px solid #2D3142;
 `;
 
 const MainContainer = styled.div`
@@ -30,10 +28,11 @@ const MainContainer = styled.div`
   flex: 1; /* Allows children to grow */
   overflow: hidden; /* Prevents scrolling within this container */
   margin-top: 10px;
+  height: calc(100vh - 10px);
 `;
 
 const SidebarContainer = styled.div`
-  width: 200px;
+  width: 220px;
   display: flex;
   flex-direction: column;
   padding: 10px;
@@ -80,8 +79,7 @@ const JSONViewerContainer = styled.div`
 `;
 
 const DSLContainer = styled.div`
-  width: 250px;
-  border-right: 1px solid #3e3d3c;
+  width: 260px;
   display: flex;
   flex-direction: column; /* Ensures children stack vertically */
   overflow: hidden; /* Prevents overflow issues */
@@ -97,6 +95,7 @@ const TerminalContainer = styled.div`
   overflow-y: auto;
   border-top: 1px solid #2D3142;
   position: relative;
+  flex-shrink: 0;
 `;
 
 const ResizeHandle = styled.div`
