@@ -60,7 +60,7 @@ exports.getPlugin = async (req, res) => {
 // Load the protobuf
 const PROTO_PATH = path.join(
   __dirname,
-  "../grpc-node-server/file_service.proto"
+  "../grpc-node-server/plugin.proto"
 );
 const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
   keepCase: true,
@@ -70,14 +70,33 @@ const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
   oneofs: true,
 });
 
-const fileServiceProto =
-  grpc.loadPackageDefinition(packageDefinition).fileservice;
+const pluginProto = grpc.loadPackageDefinition(packageDefinition).plugin;
 
-// Create a client
-const client = new fileServiceProto.FileService(
-  "localhost:50051",
+// gRPC Client setup
+const client = new pluginProto.MainService(
+  "0.0.0.0:50051",
   grpc.credentials.createInsecure()
 );
+
+const newPluginClient = new pluginProto.NewPluginService(
+  "0.0.0.0:50051",
+  grpc.credentials.createInsecure()
+);
+
+exports.grpcFun= async(req, res) => {
+  const { plugin_name, userRequirement, action } = req.body;
+
+  if (!plugin_name || !userRequirement || !action) {
+    return res.status(400).json({ error: "Missing required fields" });
+  }
+
+  client.ClientFunction({ plugin_name, userRequirement, action }, (error, response) => {
+    if (error) {
+      return res.status(500).json({ error: error.message });
+    }
+    res.json(response);
+  });
+};
 
 exports.processAll = async (req, res) => {
   try {
@@ -181,7 +200,7 @@ function uploadFile(filePath) {
       filedata: fileData,
     };
 
-    client.UploadFile(request, (err, response) => {
+    newPluginClient.NewPluginCreate(request, (err, response) => {
       if (err) {
         console.error("Error uploading file:", err);
         return;
