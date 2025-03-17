@@ -11,15 +11,19 @@ import Header from "./Header";
 const AppContainer = styled.div`
   display: flex;
   flex-direction: row;
-  height: calc(100vh - 60px); /* Full viewport height */
+  height: 100vh;
+  overflow: hidden;
 `;
 
 const MainContent = styled.div`
   display: flex;
   flex-direction: column;
-  flex: 1; /* Takes remaining space */
+  flex: 1;
   width: 100%;
+  height: 100vh;
   box-sizing: border-box;
+  overflow: hidden;
+  justify-content: space-between;
 `;
 
 const WorkflowContainer = styled.div`
@@ -59,16 +63,20 @@ const Sidebar = styled.div`
   border-right: 1px solid #ccc;
   padding: 20px;
   box-sizing: border-box;
+  flex-shrink: 0;
+  height: 100vh;
 `;
 
 const Canvas = styled.div`
-  flex: 1; /* Takes the remaining space */
-  background-color: #ffffff;
-  box-sizing: border-box;
+  flex-grow: 1; /* Takes only necessary space */
   display: flex;
-  flex-direction: column; /* Ensure terminal stacks properly */
+  flex-direction: column;
+  justify-content: flex-start;
+  background-color: #ffffff;
   padding: 10px;
   overflow: auto;
+  height: auto; /* Prevents unnecessary height expansion */
+  min-height: 300px; /* Ensures the Canvas is not too small */
 `;
 
 const AddPluginButton = styled.button`
@@ -96,8 +104,8 @@ const ColumnCanvas = styled.div`
   background-color: #f0f0f0;
   border: 2px dashed #ccc;
   border-radius: 5px;
-  min-height: 300px; /* Adjust height to fit horizontal layout */
-  overflow-x: auto; /* Enable horizontal scrolling if content overflows */
+  min-height: 200px; /* Adjust height to fit horizontal layout */
+  overflow-x: hidden; /* Enable horizontal scrolling if content overflows */
   white-space: nowrap; /* Prevent items from wrapping */
 `;
 
@@ -208,17 +216,17 @@ const TerminalContainer = styled.div`
   background-color: #2D3142;
   color: white;
   padding: 10px;
-  height: 250px;
+  height: 220px; /* Fixed height */
   overflow-y: auto;
   font-family: monospace;
   font-size: 14px;
-  margin-top: 10px;
   border: 1px solid #333;
   white-space: pre-wrap;
   display: flex;
   flex-direction: column;
-  width: 100%; 
-  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: 0px; /* Remove unnecessary space */
 `;
 
 const TerminalLog = styled.div`
@@ -227,6 +235,7 @@ const TerminalLog = styled.div`
   opacity: ${(props) => (props.visible ? 1 : 0)};
   transition: opacity 0.3s ease-in-out;
 `;
+
 
 const WorkflowCustomizationTool = () => {
   const navigate = useNavigate();
@@ -479,22 +488,38 @@ const WorkflowCustomizationTool = () => {
     const sourceColumn = plugins[source.droppableId];
     const destinationColumn = plugins[destination.droppableId];
 
-    if (source.droppableId === "column1" && destination.droppableId === "column2") {
-      const draggedItem = sourceColumn.items[source.index];
-      const updatedDestinationItems = [...destinationColumn.items];
-      if (!updatedDestinationItems.find((item) => item.id === draggedItem.id)) {
-        updatedDestinationItems.splice(destination.index, 0, draggedItem);
-      }
+    const sourceItems = [...sourceColumn.items];
+  const destinationItems = [...destinationColumn.items];
 
-      setTimeout(() => {
-        setPlugins((prev) => ({
-          ...prev,
-          column2: {
-            ...destinationColumn,
-            items: updatedDestinationItems,
-          },
-        }));
-      }, 0);
+  //   // Moving within the same column (reordering inside canvas)
+  // if (source.droppableId === destination.droppableId) {
+  //   const [movedItem] = sourceItems.splice(source.index, 1);
+  //   destinationItems.splice(destination.index, 0, movedItem);
+
+  //   setPlugins((prev) => ({
+  //     ...prev,
+  //     [destination.droppableId]: {
+  //       ...destinationColumn,
+  //       items: destinationItems,
+  //     },
+  //   }));
+  // }
+
+    if (source.droppableId === "column1" && destination.droppableId === "column2") {
+      const draggedItem = { ...sourceColumn.items[source.index] }; // Clone to remove reference
+      draggedItem.key = draggedItem.id + uuidv4();
+      const updatedDestinationItems = [...destinationColumn.items];
+      if (!destinationItems.find((item) => item.key === draggedItem.key)) {
+      destinationItems.push(draggedItem);
+    }
+
+    setPlugins((prev) => ({
+      ...prev,
+      column2: {
+        ...destinationColumn,
+        items: destinationItems,
+      },
+    }));
     }
   };
 
@@ -507,7 +532,7 @@ const WorkflowCustomizationTool = () => {
 
   const deletePlugin = (pluginId) => {
     setPlugins((prev) => {
-      const updatedItems = prev.column2.items.filter((item) => item.id !== pluginId);
+      const updatedItems = prev.column2.items.filter((item) => item.key !== pluginId);
       return {
         ...prev,
         column2: { ...prev.column2, items: updatedItems },
@@ -560,7 +585,8 @@ const WorkflowCustomizationTool = () => {
   return (
     <DragDropContext onDragEnd={onDragEnd}>
       <Layout role="exporter">
-      <AppContainer>
+        <Header title="Workflow Creation" role="exporter"></Header>
+        <AppContainer>
         {/* Sidebar */}
         <Sidebar>
           {/* <AddPluginButton onClick={() => navigate('/add-plugin')}>Add Plugin</AddPluginButton> */}
@@ -594,20 +620,35 @@ const WorkflowCustomizationTool = () => {
             {(provided) => (
               <ColumnCanvas ref={provided.innerRef} {...provided.droppableProps}>
                 {plugins.column2.items.map((item, index) => (
-                  <React.Fragment key={item.id}>
-                  <Draggable key={item.id} draggableId={item.id} index={index}>
+                  <React.Fragment key={item.key}>
+                  <Draggable key={item.key} draggableId={item.key} index={index}>
                     {(provided) => (
                       <PluginCard ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}>
                         <div style={{ display: "flex", justifyContent: "space-between" }}>
                           <strong>{pluginsData[item.id]?.name}</strong>
                           <DropdownIcon
-                            expanded={expandedPlugins[item.id]}
-                            onClick={() => toggleExpand(item.id)}
-                          >
+                            expanded={expandedPlugins[item.key]}
+                              onClick={() => toggleExpand(item.key)}
+                              key={item.key}
+                         >
                             ▼
-                          </DropdownIcon>
+                            </DropdownIcon>
+                           {/* Delete Button */}
+          <button 
+            onClick={() => deletePlugin(item.key)} 
+            style={{ 
+              background: "none", 
+              border: "none", 
+              color: "red", 
+              cursor: "pointer", 
+              fontSize: "16px", 
+              marginLeft: "8px"
+            }}
+          >
+            ❌
+          </button>
                         </div>
-                        {expandedPlugins[item.id] && (
+                        {expandedPlugins[item.key] && (
                           <ExpandedSection>
                             {pluginsData[item.id].steps.map((step, idx) => (
                               <Step key={idx}>{step}</Step>

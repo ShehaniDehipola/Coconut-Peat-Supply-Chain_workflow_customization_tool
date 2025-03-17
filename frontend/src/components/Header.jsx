@@ -18,11 +18,6 @@ const Title = styled.h3`
   margin-left: 10px;
 `;
 
-const ButtonGroup = styled.div`
-  display: flex;
-  gap: 10px;
-`;
-
 const Button = styled.button`
   display: flex;
   align-items: center;
