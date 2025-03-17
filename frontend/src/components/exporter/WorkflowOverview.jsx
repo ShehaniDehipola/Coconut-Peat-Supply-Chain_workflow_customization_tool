@@ -101,10 +101,10 @@ const WorkflowItem = styled.div`
 `;
 
 const StatusLabel = styled.span`
-  padding: 6px 12px;
+  padding: 5px 10px;
   border-radius: 12px;
-  font-size: 12px;
-  font-weight: bold;
+  font-size: 13px;
+  font-weight: 600;
   color: white;
   background-color: ${(props) => {
     switch (props.status) {

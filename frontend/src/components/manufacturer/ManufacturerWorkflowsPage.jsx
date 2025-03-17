@@ -3,6 +3,8 @@ import styled from 'styled-components';
 import { useUser } from '../../context/UserContext';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import Layout from '../MainLayout';
+import Header from '../Header';
 
 //
 // Styled Components
@@ -67,8 +69,11 @@ const TableCell = styled.td`
 `;
 
 const StatusBadge = styled.span`
-  padding: 0.3rem 0.6rem;
-  border-radius: 0.25rem;
+  padding: 5px 10px;
+  border-radius: 12px;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
   color: #fff;
   background-color: ${({ status }) => {
     switch (status) {
@@ -113,13 +118,28 @@ const Button = styled.button`
   border: none;
 `;
 
-//
-// Manufacturer Workflows Component
-//
+const SearchInput = styled.input`
+  padding: 0.3rem;
+`;
+
+const SelectFilter = styled.select`
+  padding: 0.3rem;
+`;
+
+const DateFilterContainer = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+`;
+
 const ManufacturerWorkflowsPage = () => {
   const { user } = useUser();
   const navigate = useNavigate();
   const [workflows, setWorkflows] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
 
   useEffect(() => {
     axios
@@ -145,19 +165,32 @@ const ManufacturerWorkflowsPage = () => {
       });
   }, [user]);
 
+  const filteredWorkflows = useMemo(() => {
+    return workflows.filter((wf) => {
+      const matchesSearch = wf.workflow_id.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesStatus = statusFilter ? wf.status === statusFilter : true;
+      const wfDate = new Date(wf.created_at);
+      const fromDate = dateFrom ? new Date(dateFrom) : null;
+      const toDate = dateTo ? new Date(dateTo) : null;
+      const inRange = (!fromDate || wfDate >= fromDate) && (!toDate || wfDate <= toDate);
+      return matchesSearch && matchesStatus && inRange;
+    });
+  }, [workflows, searchTerm, statusFilter, dateFrom, dateTo]);
+
   // Compute workflow counts
   const totalCount = workflows.length;
   const pendingCount = workflows.reduce((count, wf) => count + wf.versions.length, 0);
   const inProgressCount = workflows.filter((wf) => wf.status === 'In Progress').length;
   const completedCount = workflows.filter((wf) => wf.status === 'Completed').length;
     
-    const updateWorkflowStatus = () => {
-    navigate("/each-workflow")
+    const viewWorkflowDetails = (workflow_id) => {
+    navigate(`/each-workflow/${workflow_id}`)
   };
 
   return (
+    <Layout role="manufacturer">
     <PageContainer>
-      <PageTitle>Workflows List</PageTitle>
+      <Header title="Workflows List" role="manufacturer"/>
 
       {/* Summary Boxes */}
       <SubHeader>
@@ -165,6 +198,19 @@ const ManufacturerWorkflowsPage = () => {
         <SummaryBox type="Pending">Pending {pendingCount}</SummaryBox>
         <SummaryBox type="InProgress">In Progress {inProgressCount}</SummaryBox>
         <SummaryBox type="Completed">Completed {completedCount}</SummaryBox>
+        <SearchInput type="text" placeholder="Search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+          <SelectFilter value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+            <option value="">All Statuses</option>
+            <option value="Pending">Pending</option>
+            <option value="In Progress">In Progress</option>
+            <option value="Completed">Completed</option>
+          </SelectFilter>
+          <DateFilterContainer>
+            <label>From:</label>
+            <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
+            <label>To:</label>
+            <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
+          </DateFilterContainer>
       </SubHeader>
 
       {/* Workflows Table */}
@@ -180,7 +226,7 @@ const ManufacturerWorkflowsPage = () => {
           </tr>
         </thead>
         <tbody>
-          {workflows.map((wf) => (
+          {filteredWorkflows.map((wf) => (
             <TableRow key={wf._id}>
               <TableCell>{wf.workflow_id}</TableCell>
               <TableCell>{wf.exporter_id}</TableCell>
@@ -198,20 +244,21 @@ const ManufacturerWorkflowsPage = () => {
                 </ProgressBarContainer>
               </TableCell>
               <TableCell>
-                <Button onClick={() => updateWorkflowStatus()}>
+                <Button onClick={() => viewWorkflowDetails(wf.workflow_id)}>
                   View
                 </Button>
               </TableCell>
             </TableRow>
           ))}
-          {workflows.length === 0 && (
+          {filteredWorkflows.length === 0 && (
             <NoDataRow>
               <TableCell colSpan={6}>No workflows found.</TableCell>
             </NoDataRow>
           )}
         </tbody>
       </StyledTable>
-    </PageContainer>
+      </PageContainer>
+      </Layout>
   );
 };
 

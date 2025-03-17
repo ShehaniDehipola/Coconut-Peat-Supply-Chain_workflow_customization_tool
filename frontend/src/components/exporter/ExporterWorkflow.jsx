@@ -4,17 +4,22 @@ import styled from "styled-components";
 import Layout from "../MainLayout";
 import Header from "../Header";
 import axios from "axios";
+import { FaCheckCircle, FaSpinner, FaRegCircle } from "react-icons/fa";
 
 const Container = styled.div`
    padding: 1rem;
 `;
 
-const Title = styled.div`
+const TitleContainer = styled.div`
   display: flex;
-  flex-directiont: row;
+  flex-directiont: column;
+  align-items: flex-start;
   margin-bottom: 20px;
-  font-size: 18px;
-  font-weight: semi-bold;
+`;
+
+const Label = styled.span`
+  font-weight: 600;
+  color: #2D3142;
 `;
 
 const Table = styled.table`
@@ -35,13 +40,15 @@ const Td = styled.td`
 `;
 
 const Tr = styled.tr`
-  background: ${(props) => (props.substep ? "#f9f9f9" : "white")};
+  background: ${(props) => (props.substep ? "#f8f9fa" : "white")};
 `;
 
 const StatusBadge = styled.span`
   padding: 5px 10px;
-  border-radius: 5px;
+  border-radius: 10px;
   color: white;
+  font-size: 13px;
+  font-weight: 600;
   background: ${(props) => {
     switch (props.status) {
       case "Completed":
@@ -70,6 +77,22 @@ const ErrorContainer = styled.div`
   font-size: 18px;
   color: red;
 `;
+
+const formatDateTime = (datetime) => {
+  if (!datetime) return { date: '-', time: '-' };
+  const dateObj = new Date(datetime);
+  const date = dateObj.toLocaleDateString();
+  const time = dateObj.toLocaleTimeString();
+  return { date, time };
+};
+
+const getSubStepIcon = (status) => {
+  switch (status) {
+    case "completed": return <FaCheckCircle color="#28a745" />;
+    case "in Progress": return <FaSpinner color="#ffc107" />;
+    default: return <FaRegCircle color="#6c757d" />;
+  }
+};
 
 const ExporterWorkflow = () => {
    const { workflowId } = useParams();
@@ -127,55 +150,68 @@ const ExporterWorkflow = () => {
 
     return (
     <Layout role="exporter">
-     <Header title="Workflow Details"></Header>     
+     <Header title="Workflow Execution Summary"></Header>     
     <Container>
-      <Title>
-        <div>Workflow ID: {workflow.workflow_id}</div>
-        <div>Assigned Manufacturer:  {workflow.manufacturer_id}</div>
-      </Title>
+      <TitleContainer>
+            <div><Label>Workflow ID: </Label> {workflow.workflow_id}</div>
+          </TitleContainer>
+          <TitleContainer>
+        <div><Label>Assigned Manufacturer: </Label> {workflow.manufacturer_id}</div>
+      </TitleContainer>
       <Table>
         <thead>
           <tr>
             <Th>Plugin Name</Th>
-            <Th>Started Time</Th>
+            <Th>Start Date</Th>
+            <Th>Start Time</Th>
+            <Th>Completed Date</Th>
             <Th>Completed Time</Th>
             <Th>Status</Th>
             <Th>Required Amount</Th>
             <Th>Notes</Th>
           </tr>
         </thead>
-        <tbody>
-           {steps.map((step, index) => (
-            <React.Fragment key={index}>
-              <Tr>
-                <Td>{step.pluginName}</Td>
-                <Td>{step.startedTime || "-"}</Td>
-                <Td>{step.completedTime || "-"}</Td>
-                <Td>
-                  <StatusBadge status={getStepStatus(step)}>
-                    {getStepStatus(step)}
-                  </StatusBadge>
-                       </Td>
-                <Td>{step.required_amount ?? "-"}</Td>
-                <Td>{step.notes || "-"}</Td>
-              </Tr>
-              {/* Sub-Step Rows */}
-              {step.sub_steps &&
-                step.sub_steps.map((subStep, subIndex) => (
-                  <Tr key={`${index}-${subIndex}`} substep>
-                    <Td> ↳ {subStep.name}</Td>
-                    <Td>{subStep.started_at || "-"}</Td>
-                    <Td>{subStep.completed_at || "-"}</Td>
-                    <Td>
-                      <StatusBadge status={subStep.status}>
-                        {subStep.status}
-                      </StatusBadge>
-                    </Td>
-                    <Td>-</Td>
-                  </Tr>
-                ))}
-            </React.Fragment>
-          ))}             
+            <tbody>
+          {steps.map((step, index) => {
+            const start = formatDateTime(step.started_at);
+            const completed = formatDateTime(step.completed_at);
+            return (
+              <React.Fragment key={index}>
+                <Tr>
+                  <Td>{step.pluginName}</Td>
+                  <Td>{start.date}</Td>
+                  <Td>{start.time}</Td>
+                  <Td>{completed.date}</Td>
+                  <Td>{completed.time}</Td>
+                  <Td>
+                    <StatusBadge status={getStepStatus(step)}>
+                      {getStepStatus(step)}
+                    </StatusBadge>
+                  </Td>
+                  <Td>{step.required_amount ?? "-"}</Td>
+                  <Td>{step.notes || "-"}</Td>
+                </Tr>
+                {/* Sub-Step Rows */}
+                {step.sub_steps &&
+                  step.sub_steps.map((subStep, subIndex) => {
+                    const subStart = formatDateTime(subStep.started_at);
+                    const subCompleted = formatDateTime(subStep.completed_at);
+                    return (
+                      <Tr key={`${index}-${subIndex}`} substep>
+                        <Td> ↳ {subStep.name}</Td>
+                        <Td>{subStart.date}</Td>
+                        <Td>{subStart.time}</Td>
+                        <Td>{subCompleted.date}</Td>
+                        <Td>{subCompleted.time}</Td>
+                        <Td>
+                          {getSubStepIcon(subStep.status)}
+                        </Td>
+                      </Tr>
+                    );
+                  })}
+              </React.Fragment>
+            );
+          })}    
         </tbody>
       </Table>
     </Container>

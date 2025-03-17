@@ -85,9 +85,11 @@ const TableCell = styled.td`
 `;
 
 const StatusBadge = styled.span`
-  padding: 0.3rem 0.6rem;
-  border-radius: 0.25rem;
+  padding: 5px 10px;
+  border-radius: 12px;
   color: #fff;
+  font-size: 13px;
+  font-weight: 600;
   background-color: ${({ status }) => {
     switch (status) {
       case 'pending':
@@ -125,7 +127,7 @@ const Button = styled.button`
   padding: 8px 20px;
   border-radius: 4px;
   cursor: pointer;
-  font-weight: bold;
+  font-weight: semi-bold;
   background-color: #2D3142;
   color: #fff;
   border: none;
