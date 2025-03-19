@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+const mongoose = require('mongoose');
 
 const pluginSchema = new mongoose.Schema({
   plugin_name: { type: String, required: true, unique: true },
@@ -6,4 +6,4 @@ const pluginSchema = new mongoose.Schema({
   links: { type: Array, required: true },
 });
 
-module.exports = mongoose.model("Plugin", pluginSchema);
+module.exports = mongoose.model('NewPlugin', pluginSchema);
