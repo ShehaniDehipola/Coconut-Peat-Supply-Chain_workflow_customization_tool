@@ -26,6 +26,33 @@ const Title = styled.h1`
   margin-bottom: 20px;
 `;
 
+const HeaderContent = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+`;
+
+const LeftSection = styled.div`
+  display: flex;
+  flex-direction: column;
+`;
+
+const RightSection = styled.div`
+  display: flex;
+  align-items: center;
+`;
+
+const Label = styled.span`
+  font-weight: 600;
+  color: #2D3142;
+`;
+
 /* Flexbox wrapper to place Step and Notes side by side */
 const StepWrapper = styled.div`
   display: flex;
@@ -328,6 +355,7 @@ const closeModal = () => {
     const stepOrder = updatedSteps[stepIndex].order;
     const currentPlugin = updatedSteps[stepIndex];
     const workflowId = workflow.workflow_id;
+    const pluginName = currentPlugin.name;
       
     // For "complete" plugin, ensure all sub-steps are completed
     if (actionType === 'next') {
@@ -380,6 +408,17 @@ const closeModal = () => {
 
       setSteps(updatedSteps);
       toast.success("Plugin status updated successfully.");
+
+      // Call the API to trigger gRPC execution after updating status
+    if (actionType === 'start') {
+      await axios.post(`http://localhost:5000/api/plugin/grpc`, {
+        workflow_id: workflowId,
+        plugin_name: pluginName,
+        action: 'execution'
+      });
+
+      toast.success("Plugin execution request sent to the core system successfully.");
+    }
   } catch (error) {
       console.error('Error updating plugin step:', error);
       toast.error("Error updating plugin status.");
@@ -536,20 +575,24 @@ const closeModal = () => {
     <Layout role="manufacturer">
       <Container>
         <Header title="Worklow Progress" role="manufacturer"></Header>
-      <HeaderRow>
-        {/* Progress Bar */}
-        <ProgressBarWrapper>
-          <ProgressBarContainer>
-            <ProgressBarFill progress={overallProgress} />
-          </ProgressBarContainer>
-          <span>{overallProgress}%</span>
-        </ProgressBarWrapper>
-      </HeaderRow>
-      <p>Assigned Date: {assignedDate}</p>
-      <p>Expoter ID: {workflow?.exporter_id}</p>
-      <p>Deadline: {deadline}</p>
-        
+      <HeaderContent>
+        {/* Left Section for Assigned Date, Exporter ID, and Deadline */}
+        <LeftSection>
+          <Label>Assigned Date: {assignedDate}</Label>
+          <Label>Exporter ID: {workflow?.exporter_id}</Label>
+          <Label>Deadline: {deadline}</Label>
+        </LeftSection>
 
+        {/* Right Section for Progress Bar */}
+        <RightSection>
+          <ProgressBarWrapper>
+            <ProgressBarContainer>
+              <ProgressBarFill progress={overallProgress} />
+            </ProgressBarContainer>
+            <span>{overallProgress}%</span>
+          </ProgressBarWrapper>
+        </RightSection>
+      </HeaderContent>
       <Title>Plugins and Sub-Steps</Title>
       {steps.map((step, index) => (
         <StepWrapper key={index}>

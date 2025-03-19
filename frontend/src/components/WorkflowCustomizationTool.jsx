@@ -4,9 +4,10 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import styled from "styled-components";
 import { v4 as uuidv4 } from "uuid";
 import { FaArrowRight, FaTrash } from "react-icons/fa";
-import Layout from "./MainLayout";
+import NewLayout from "./NewWorkflowLayout";
 import Header from "./Header";
 import TerminalOutput from "./sidebar/TerminalOutput"
+import { toast } from "react-toastify";
 
 // Styled Components
 const AppContainer = styled.div`
@@ -16,16 +17,28 @@ const AppContainer = styled.div`
   overflow: hidden;
 `;
 
-const MainContent = styled.div`
+const ContentWrapper = styled.div`
   display: flex;
   flex-direction: column;
   flex: 1;
   width: 100%;
-  height: 100vh;
+  height: 100%; /* Subtract header height if applicable */
   box-sizing: border-box;
-  overflow: hidden;
-  justify-content: space-between;
 `;
+
+const SplitContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+`;
+
+const HalfSection = styled.div`
+  flex: 1; /* Makes both sections take equal height */
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+`;
+
 
 const WorkflowContainer = styled.div`
   display: flex;
@@ -38,6 +51,54 @@ const Title = styled.h1`
   font-weight: bold;
   color: #2D3142; 
   margin-bottom: 20px;
+`;
+
+const CanvasHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #1F2532;
+  padding: 8px 12px;
+  color: white;
+  font-weight: semi-bold;
+`;
+
+const CanvasContainer = styled.div`
+  background-color: #2D3142;
+  color: white;
+  padding: 10px;
+  min-height: 300px; /* Keep canvas height */
+  border: 1px solid #333;
+  box-sizing: border-box;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+`;
+
+const ButtonGroup = styled.div`
+  display: flex;
+  gap: 10px; /* Add spacing between buttons */
+`;
+
+const CanvasButton = styled.button`
+  background: none;
+  border: 1px solid white;
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  font-size: 14px;
+  padding: 6px 12px;
+  border-radius: 4px;
+  transition: background-color 0.3s ease-in-out;
+
+  &:hover {
+    background-color: #d9534f; /* Red hover effect */
+  }
+
+  svg {
+    margin-left: 5px;
+  }
 `;
 
 const CanvasHeadingContainer = styled.div`
@@ -68,19 +129,18 @@ const Sidebar = styled.div`
   padding: 8px;
   box-sizing: border-box;
   flex-shrink: 0;
-  height: 100vh;
+  height: 100%; /* Ensures sidebar does not exceed screen height */
+  display: flex;
+  flex-direction: column;
 `;
 
 const Canvas = styled.div`
-  flex-grow: 1; /* Takes only necessary space */
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
   background-color: #ffffff;
-  padding: 10px;
   overflow: auto;
   height: auto; /* Prevents unnecessary height expansion */
-  min-height: 300px; /* Ensures the Canvas is not too small */
 `;
 
 const AddPluginButton = styled.button`
@@ -145,8 +205,9 @@ const PluginCard = styled.div`
   margin-bottom: 10px;
   background-color: rgba(216, 149, 39, 0.1);
   cursor: pointer;
-  overflow: hidden; /* Prevents overflow of content */
-  position: relative; /* Ensures positioning of children relative to the card */
+  overflow: hidden;
+  position: relative;
+  min-height: 150px;
 `;
 
 
@@ -214,58 +275,6 @@ const Button = styled.button`
     background-color: #2D3142;
     color: white;
   }
-`;
-
-const TerminalHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background-color: #1F2532;
-  padding: 8px 12px;
-  color: white;
-  font-weight: bold;
-`;
-
-const ClearButton = styled.button`
-  background: none;
-  border: none;
-  color: white;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  font-size: 14px;
-
-  &:hover {
-    color: #d9534f; /* Red hover effect */
-  }
-
-  svg {
-    margin-left: 5px;
-  }
-`;
-
-const TerminalContainer = styled.div`
-  background-color: #2D3142;
-  color: white;
-  padding: 10px;
-  height: 220px; /* Fixed height */
-  overflow-y: auto;
-  font-family: monospace;
-  font-size: 12px;
-  border: 1px solid #333;
-  white-space: pre-wrap;
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  box-sizing: border-box;
-  margin-top: 0px;
-`;
-
-const TerminalLog = styled.div`
-  white-space: pre-wrap;
-  overflow-wrap: break-word;
-  opacity: ${(props) => (props.visible ? 1 : 0)};
-  transition: opacity 0.3s ease-in-out;
 `;
 
 const WorkflowCustomizationTool = () => {
@@ -362,7 +371,7 @@ const WorkflowCustomizationTool = () => {
 
   const formatStepsForLog = (steps) => {
   return steps.map((step, index) => 
-    `🔹 Step ${index + 1}: ${step.pluginName} | Order: ${step.order} | Required: ${step.required_amount}`
+    `   Step ${index + 1}: ${step.pluginName} | Order: ${step.order} | Required: ${step.required_amount}`
   ).join("\n");
 };
   
@@ -371,11 +380,11 @@ const WorkflowCustomizationTool = () => {
     setProgress(10);
     
   if (plugins.column2.items.length === 0) {
-    addLog("❌ Error: You must add at least one step.");
+    addLog(" Error: You must add at least one step.");
     return;
     }
     
-    addLog("📡 Preparing workflow data...");
+    addLog(" Preparing workflow data...");
     setProgress(30);
 
   // Build steps data from the canvas items
@@ -385,43 +394,43 @@ const WorkflowCustomizationTool = () => {
     required_amount: Number(item.required_amount) || 20, // Ensure it's a valid number
   }));
     
-    addLog("🔍 Starting step-by-step validation...");
+    addLog(" Starting step-by-step validation...");
     
     for (let i = 0; i < stepsData.length; i++) {
     const step = stepsData[i];
 
-    addLog(`➡️ Validating Step ${i + 1}: ${step.pluginName}...`);
+    addLog(` Validating Step ${i + 1}: ${step.pluginName}`);
     await new Promise(resolve => setTimeout(resolve, 500)); // Simulate delay
 
     if (!step.pluginName) {
-      addLog(`❌ Validation failed: Step ${i + 1} has no plugin name.`);
+      addLog(` Validation failed: Step ${i + 1} has no plugin name.`);
       setProgress(0);
       return;
     }
     if (typeof step.order !== "number" || step.order < 1) {
-      addLog(`❌ Validation failed: Step ${i + 1} has an invalid order.`);
+      addLog(` Validation failed: Step ${i + 1} has an invalid order.`);
       setProgress(0);
       return;
     }
     if (step.required_amount < 1) {
-      addLog(`❌ Validation failed: Step ${i + 1} requires a valid amount.`);
+      addLog(` Validation failed: Step ${i + 1} requires a valid amount.`);
       setProgress(0);
       return;
     }
 
-    addLog(`✅ Step ${i + 1}: ${step.pluginName} validated successfully.`);
+    addLog(` Step ${i + 1}: ${step.pluginName} validated successfully.`);
     await new Promise(resolve => setTimeout(resolve, 300)); // Simulate delay
     }
     
-    addLog(`📝 All steps validated! Final workflow:\n${formatStepsForLog(stepsData)}`);
+    addLog(` All steps validated! Final workflow:\n${formatStepsForLog(stepsData)}`);
     setProgress(50);
 
-    addLog(`✅ Workflow ID: ${workflowID}`);
+    addLog(` Workflow ID: ${workflowID}`);
 
   const payload = { steps: stepsData };
 
     try {
-      addLog("🔍 Validating workflow with backend...");
+      addLog(" Validating workflow with backend...");
       setProgress(50);
     // 🔹 Step 1: Validate Workflow Before Updating/Creating
     const validateResponse = await fetch("http://localhost:5000/api/workflow/validate-workflow", {
@@ -436,7 +445,7 @@ const WorkflowCustomizationTool = () => {
       throw new Error(validateData.message || "Workflow validation failed.");
     }
 
-      addLog("✅ Validation successful!...");
+      addLog(" Validation successful!...");
       setProgress(80);
 
     console.log("Validation successful! Proceeding with update/create.");
@@ -444,7 +453,7 @@ const WorkflowCustomizationTool = () => {
     // 🔹 Step 2: If editing an existing workflow, update it
     if (location.state?.workflow_id) {
       try {
-        addLog(`🔄 Updating workflow ${workflowID}...`);
+        addLog(` Updating workflow ${workflowID}...`);
         const response = await fetch(
           `http://localhost:5000/api/workflow/${workflowID}`,
           {
@@ -462,27 +471,27 @@ const WorkflowCustomizationTool = () => {
         const data = await response.json();
         console.log("Update successful:", data);
 
-        addLog("✅ Workflow updated successfully!");
+        addLog(" Workflow updated successfully!");
         setProgress(100);
         // After successful update, navigate to the details page
-        navigate("/workflow-details", { state: { workflow_id: workflowID, steps: stepsData } });
+        // navigate("/workflow-details", { state: { workflow_id: workflowID, steps: stepsData } });
 
       } catch (error) {
         console.error("Error updating workflow:", error);
-        alert(`Error updating workflow: ${error.message}`);
+        toast.error(`Error updating workflow: ${error.message}`);
       }
     } else {
-      addLog("🆕 Creating new workflow...");
+      addLog(" Creating new workflow...");
       setProgress(100);
       // Step 3: If creating a new workflow, navigate to workflow-details
-      navigate("/workflow-details", { state: { workflow_id: workflowID, steps: stepsData } });
+      // navigate("/workflow-details", { state: { workflow_id: workflowID, steps: stepsData } });
     }
 
     } catch (error) {
-      addLog(`❌ Error: ${error.message}`);
+      addLog(` Error: ${error.message}`);
       setProgress(0);
     console.error("Error validating workflow:", error);
-    alert(`Error: ${error.message}`);
+    toast.error(`Error: ${error.message}`);
   }
 };
 
@@ -576,14 +585,14 @@ const WorkflowCustomizationTool = () => {
         throw new Error(data.message);
       }
 
-      alert("Validation successful! Proceeding to the next step.");
+      toast.success("Validation successful! Proceeding to the next step.");
       const stepsData = plugins.column2.items.map((item, index) => ({
     pluginName: pluginsData[item.id]?.name || "Unknown Plugin",
     order: index + 1,
     required_amount: pluginsData[item.id]?.required_amount || 0,
       }));
       console.log("Navigating to workflow-details with:", stepsData);
-      navigate("/workflow-details", { state: { steps: stepsData } });
+      // navigate("/workflow-details", { state: { steps: stepsData } });
     } catch (error) {
       setError(error.message);
     }
@@ -591,7 +600,7 @@ const WorkflowCustomizationTool = () => {
 
   return (
     <DragDropContext onDragEnd={onDragEnd}>
-      <Layout role="exporter">
+      <NewLayout role="exporter">
         <Header title="Workflow Creation" role="exporter"></Header>
         <AppContainer>
         {/* Sidebar */}
@@ -616,13 +625,22 @@ const WorkflowCustomizationTool = () => {
           </Droppable>
           </Sidebar>
           
-          <MainContent>
+          <ContentWrapper>
+            <SplitContainer>
+              <HalfSection>
         {/* Workflow Canvas */}
         <Canvas>
-          <CanvasHeadingContainer>
-            <Title>{plugins.column2.name}</Title>
-            <BuildWorkflowButton onClick={buildWorkflow}>{location.state?.workflow_id ? "Update Workflow" : "Build Workflow"}</BuildWorkflowButton>
-          </CanvasHeadingContainer>
+          <CanvasHeader>
+    <span>Workflow Canvas</span>
+    <ButtonGroup>
+      <CanvasButton onClick={() => setPlugins((prev) => ({ ...prev, column2: { ...prev.column2, items: [] } }))}>
+        Clear
+      </CanvasButton>
+      <CanvasButton onClick={buildWorkflow}>
+        Build
+      </CanvasButton>
+    </ButtonGroup>
+  </CanvasHeader>
           <Droppable droppableId="column2">
             {(provided) => (
               <ColumnCanvas ref={provided.innerRef} {...provided.droppableProps}>
@@ -640,20 +658,6 @@ const WorkflowCustomizationTool = () => {
                          >
                             ▼
                             </DropdownIcon>
-                           {/* Delete Button */}
-          <button 
-            onClick={() => deletePlugin(item.key)} 
-            style={{ 
-              background: "none", 
-              border: "none", 
-              color: "red", 
-              cursor: "pointer", 
-              fontSize: "16px", 
-              marginLeft: "8px"
-            }}
-          >
-            ❌
-          </button>
                         </div>
                         {expandedPlugins[item.key] && (
                           <ExpandedSection>
@@ -682,7 +686,22 @@ const WorkflowCustomizationTool = () => {
         </InputField>
         ))}
                           </ExpandedSection>
-                        )}
+                          )}
+                          {/* Delete Button Positioned at the Bottom */}
+  <div style={{ marginTop: "auto", textAlign: "center" }}>
+    <button 
+      onClick={() => deletePlugin(item.key)} 
+      style={{ 
+        background: "none", 
+        border: "none", 
+        color: "red", 
+        cursor: "pointer", 
+        fontSize: "16px"
+      }}
+    >
+      <FaTrash />
+    </button>
+  </div>
                       </PluginCard>
                     )}
                     </Draggable>
@@ -696,11 +715,15 @@ const WorkflowCustomizationTool = () => {
               </ColumnCanvas>
             )}
             </Droppable>
-        </Canvas>
-            <TerminalOutput logs={logs} setLogs={setLogs} />
-          </MainContent>
+                </Canvas>
+                </HalfSection>
+              <HalfSection>
+                <TerminalOutput logs={logs} setLogs={setLogs} />
+                </HalfSection>
+              </SplitContainer>
+          </ContentWrapper>
       </AppContainer>
-      </Layout>
+      </NewLayout>
     </DragDropContext>
   );
 };

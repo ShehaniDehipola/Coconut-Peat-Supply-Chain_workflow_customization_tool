@@ -14,15 +14,18 @@ const TerminalHeader = styled.div`
 
 const ClearButton = styled.button`
   background: none;
-  border: none;
+  border: 1px solid white;
   color: white;
   cursor: pointer;
   display: flex;
   align-items: center;
   font-size: 14px;
+  padding: 6px 12px;
+  border-radius: 4px;
+  transition: background-color 0.3s ease-in-out;
 
   &:hover {
-    color: #d9534f; /* Red hover effect */
+    background-color: #d9534f; /* Red hover effect */
   }
 
   svg {
@@ -74,7 +77,7 @@ const TerminalOutput = ({ logs, setLogs }) => {
       <TerminalHeader>
         <span>Execution Logs</span>
         <ClearButton onClick={() => setLogs([])}>
-          Clear <FaTrash size={14} />
+          Clear
         </ClearButton>
       </TerminalHeader>
       <TerminalContainer>
