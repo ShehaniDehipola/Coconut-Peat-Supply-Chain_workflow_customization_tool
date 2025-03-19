@@ -7,6 +7,7 @@ import axios from 'axios';
 import JSONViewer from "./parser/JsonViewer";
 import DSLInstructions from "./parser/InstructionsContainer";
 import Diagram from "./Diagram";
+import TerminalOutput from "./sidebar/TerminalOutput";
 import { generateGoCode } from "../utils/goGenerator";
 import { generateDSL } from "../utils/dslGenerator";
 
@@ -93,6 +94,47 @@ const TerminalContainer = styled.div`
   height: 200px;
   background-color: #2D3142;
   color: white;
+  border-top: 1px solid #2D3142;
+  position: relative;
+  flex-shrink: 0;
+`;
+
+const TerminalHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #1F2532;
+  padding: 8px 12px;
+  color: white;
+  font-weight: semi-bold;
+`;
+
+const ClearButton = styled.button`
+  background: none;
+  border: 1px solid white;
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  font-size: 14px;
+  padding: 6px 12px;
+  border-radius: 4px;
+  transition: background-color 0.3s ease-in-out;
+
+  &:hover {
+    background-color: #d9534f; /* Red hover effect */
+  }
+
+  svg {
+    margin-left: 5px;
+  }
+`;
+
+const TerminalBodyContainer = styled.div`
+  width: 100%;
+  height: 200px;
+  background-color: #2D3142;
+  color: white;
   font-family: monospace;
   padding: 10px;
   overflow-y: auto;
@@ -100,6 +142,7 @@ const TerminalContainer = styled.div`
   position: relative;
   flex-shrink: 0;
 `;
+
 
 const ResizeHandle = styled.div`
   height: 5px;
@@ -235,7 +278,7 @@ COPY .env .env
 RUN go install github.com/joho/godotenv/cmd/godotenv@latest
 
 # Build the Go app
-RUN go build -o custom_plugin
+RUN go build -o washing_plugin
 
 # Create a minimal runtime image
 FROM alpine:latest
@@ -244,16 +287,16 @@ FROM alpine:latest
 WORKDIR /root/
 
 # Copy the pre-built binary from the builder stage
-COPY --from=builder /app/custom_plugin .
+COPY --from=builder /app/washing_plugin .
 
 # Copy the .env file to the runtime image's working directory
 COPY --from=builder /app/.env /root/
 
 # Make sure the binary is executable
-RUN chmod +x custom_plugin
+RUN chmod +x washing_plugin
 
 # Expose the gRPC port
-EXPOSE 50000
+EXPOSE 50054
 
 # Command to run the executable
 CMD ["./washing_plugin"]`
@@ -473,16 +516,24 @@ func main() {
           <Diagram onExport={handleModelChange} model={model} />
           {/* Generate Go Code Button */}
           <TerminalContainer height={terminalHeight}>
-             <ResizeHandle onMouseDown={handleMouseDown} />
+            <TerminalHeader>
+        <span>Execution Logs</span>
+        <ClearButton onClick={() => setTerminalLogs([])}>
+          Clear
+        </ClearButton>
+      </TerminalHeader>
+            <TerminalBodyContainer>
             {terminalLogs.map((log, index) => (
               <div key={index}>{log}</div>
             ))}
+            </TerminalBodyContainer>
           </TerminalContainer>
+          {/* <TerminalOutput logs={terminalLogs} setLogs={setTerminalLogs} /> */}
         </DiagramContainer>
 
         {/* DSL Instructions */}
         <DSLContainer>
-          <DSLInstructions model={model} onUpdateModel={handleUpdateModel} isUpdateWorkFlow ={true} logToTerminal={logToTerminal}  setInstructions={setInstructions} />
+          <DSLInstructions model={model} onUpdateModel={handleUpdateModel} isUpdateWorkFlow ={false} logToTerminal={logToTerminal}  setInstructions={setInstructions} />
         </DSLContainer>
       </MainContainer>
       <ToastContainer />

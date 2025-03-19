@@ -87,29 +87,29 @@ const DSLInstructions = ({ model, onUpdateModel, logToTerminal, isUpdateWorkFlow
   const hasValidated = useRef(false); 
 
   useEffect(() => {
-    if (!model || hasValidated.current ) return;
+    if (!model || hasValidated.current || isUpdateWorkFlow) return;
 
     setIsProcessing(true); // Indicate that validation is in progress
     logToTerminal("Starting validation process...");
 
-    generateDSL(model, logToTerminal, setInstructions)
-      .then((dsl) => {
-        logToTerminal("Validation complete. Preparing flowchart...");
-        setInstructions(dsl);
-        setPreview(dsl);
-        setValidatedModel(generateJSON(dsl)); // Store validated model
+      generateDSL(model, logToTerminal, setInstructions)
+        .then((dsl) => {
+          logToTerminal("Validation complete. Preparing flowchart...");
+          setInstructions(dsl);
+          setPreview(dsl);
+          setValidatedModel(generateJSON(dsl)); // Store validated model
         
-        setTimeout(() => {
-          setIsProcessing(false); // Mark processing as complete
-        }, 1000); // Small delay for better UX
-      })
-      .catch((error) => {
-        const errorMessage = `Error: ${error.message}`;
-        logToTerminal(errorMessage);
-        setInstructions(errorMessage);
-        setPreview(errorMessage);
-        setIsProcessing(false);
-      });
+          setTimeout(() => {
+            setIsProcessing(false); // Mark processing as complete
+          }, 1000); // Small delay for better UX
+        })
+        .catch((error) => {
+          const errorMessage = `Error: ${error.message}`;
+          logToTerminal(errorMessage);
+          setInstructions(errorMessage);
+          setPreview(errorMessage);
+          setIsProcessing(false);
+        });
 
   }, [model]); // Runs only when model changes
 
@@ -160,8 +160,8 @@ const DSLInstructions = ({ model, onUpdateModel, logToTerminal, isUpdateWorkFlow
         </Tab>
       </TabContainer>
 
-      {isProcessing && <div style={{ color: "blue" }}>🔄 Running Validations...</div>}
-      {errorMessage && <div style={{ color: "red" }}>⚠ {errorMessage}</div>}
+      {isProcessing && <div style={{ color: "blue" }}> Running Validations...</div>}
+      {errorMessage && <div style={{ color: "red" }}> {errorMessage}</div>}
 
       {/* Dynamic Content Based on Active Tab */}
       {activeTab === "DSL Editor" && (

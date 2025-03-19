@@ -245,6 +245,9 @@ const WorkflowDetails = ({ }) => {
   const initialWorkflowID = location.state?.workflow_id || "";
   const initialSteps = location.state?.steps || [];
 
+  console.log("Initial Workflow ID:", initialWorkflowID);
+  console.log("Initial Steps:", initialSteps);
+
   useEffect(() => {
     if (initialWorkflowID) {
       setWorkflowID(initialWorkflowID);
@@ -291,7 +294,9 @@ const WorkflowDetails = ({ }) => {
       }, []);
     
   const handleEditWorkflow = () => {
-      navigate("/new-workflow", { state: { workflow_id: workflowID, steps: selectedVersion?.steps || [] } });
+    navigate("/new-workflow", { state: { workflow_id: workflowID, steps: selectedVersion?.steps || [] } });
+    
+    console.log("Workflow steps:", selectedVersion?.steps);
   };
 
   const handleDeleteWorkflow = () => {
@@ -304,7 +309,12 @@ const WorkflowDetails = ({ }) => {
     }
   };
 
-    const handleConfirmWorkflow = async () => {
+  const handleConfirmWorkflow = async () => {
+      
+    console.log("User Exporter ID:", user?.exporter_id);
+    console.log("Workflow ID:", workflowID);
+    console.log("Initial Steps:", initialSteps);
+    console.log("Selected Manufacturer:", selectedManufacturer);
         
     if (!user?.exporter_id || !workflowID || initialSteps.length === 0 || !selectedManufacturer) {
       toast.error("Please fill all fields before confirming.");
@@ -313,18 +323,23 @@ const WorkflowDetails = ({ }) => {
       
     console.log("Using selected manufacturer:", selectedManufacturer);
     console.log("All steps:", initialSteps);
-
+      
+      // Correctly mapping sub-steps into workflow data
+  const processedSteps = initialSteps.map((step) => ({
+    pluginName: step.pluginName,
+    required_amount: step.required_amount || 0,
+    sub_steps: step.sub_steps && Array.isArray(step.sub_steps)
+            ? step.sub_steps.map((name, index) => ({
+                name: name,  
+            }))
+            : [], 
+  }));
+      
     const workflowData = {
       workflow_id: workflowID, // Auto-generated ID
       exporter_id: user.exporter_id,
       manufacturer_id: selectedManufacturer,
-      versions: [
-        {
-          versionNumber: version,
-          status: status,
-          steps: initialSteps,
-        },
-      ],
+      steps: processedSteps,
     };
       
       console.log("Submitting Workflow Data:", workflowData);
