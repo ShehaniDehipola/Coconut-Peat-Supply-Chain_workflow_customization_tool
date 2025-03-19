@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import { FaTrash } from "react-icons/fa";
 
+// Styled Components
 const TerminalHeader = styled.div`
   display: flex;
   justify-content: space-between;
@@ -48,6 +49,23 @@ const TerminalContainer = styled.div`
   width: 100%;
   box-sizing: border-box;
   margin-top: 0px;
+  position: relative;
+`;
+
+// Loading Animation
+const LoadingMessage = styled.div`
+  text-align: center;
+  font-size: 20px;
+  font-weight: bold;
+  color: #fff;
+  padding: 20px;
+  animation: blink 1s linear infinite;
+
+  @keyframes blink {
+    0% { opacity: 0.8; }
+    50% { opacity: 1.2; }
+    100% { opacity: 0.8; }
+  }
 `;
 
 const TerminalLog = styled.div`
@@ -60,9 +78,22 @@ const TerminalLog = styled.div`
 const TerminalOutput = ({ logs, setLogs }) => {
   const [displayedLogs, setDisplayedLogs] = useState([]);
   const [index, setIndex] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (index < logs.length) {
+    setDisplayedLogs([]); // Reset displayed logs
+    setIndex(0);
+    setIsLoading(true); // Show loading animation first
+
+    const loadingTimeout = setTimeout(() => {
+      setIsLoading(false); // After 2s, start displaying logs
+    }, 2000);
+
+    return () => clearTimeout(loadingTimeout);
+  }, [logs]);
+
+  useEffect(() => {
+    if (!isLoading && index < logs.length) {
       const timer = setTimeout(() => {
         setDisplayedLogs((prevLogs) => [...prevLogs, logs[index]]);
         setIndex(index + 1);
@@ -70,7 +101,7 @@ const TerminalOutput = ({ logs, setLogs }) => {
 
       return () => clearTimeout(timer);
     }
-  }, [index, logs]);
+  }, [index, logs, isLoading]);
 
   return (
     <div>
@@ -81,11 +112,15 @@ const TerminalOutput = ({ logs, setLogs }) => {
         </ClearButton>
       </TerminalHeader>
       <TerminalContainer>
-        {displayedLogs.map((log, i) => (
-          <TerminalLog key={i} visible>
-            {log}
-          </TerminalLog>
-        ))}
+        {isLoading ? (
+          <LoadingMessage>Validation Executing...</LoadingMessage>
+        ) : (
+          displayedLogs.map((log, i) => (
+            <TerminalLog key={i} visible>
+              {log}
+            </TerminalLog>
+          ))
+        )}
       </TerminalContainer>
     </div>
   );
