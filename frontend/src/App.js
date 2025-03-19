@@ -20,6 +20,7 @@ import styled from 'styled-components';
 import { useUser } from './context/UserContext';
 import AllWorkflowsPage from './components/exporter/AllWorkflowsPage';
 import ManufacturerWorkflowsPage from './components/manufacturer/ManufacturerWorkflowsPage';
+import ExporterWorkflow from './components/exporter/ExporterWorkflow';
 
 const ContentArea = styled.div`
   margin-left: ${(props) => (props.expanded ? '0px' : '60px')};
@@ -87,6 +88,12 @@ function App() {
               element={<WorkflowProgress />}
             />
 
+            {/* Route for the exporter workflow track page */}
+            <Route
+              path='/workflow-info/:workflowId'
+              element={<ExporterWorkflow />}
+            />
+
             <Route
               path='/workflow-details'
               element={<WorkflowDetails />}
@@ -105,7 +112,7 @@ function App() {
             />
 
             <Route
-              path='/each-workflow'
+              path='/each-workflow/:workflowId'
               element={<ManufacturerWorkflowPage />}
             />
           </Routes>

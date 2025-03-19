@@ -1,10 +1,15 @@
 import React, { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 import styled from 'styled-components';
+import axios from 'axios'
+import Layout from '../MainLayout';
+import Header from '../Header';
+import ConfirmationModal from '../ConfirmationModal';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const Container = styled.div`
-  padding: 20px;
-  max-width: 1200px;
-  margin: auto;
+  padding: 1rem;
 `;
 
 const HeaderRow = styled.div`
@@ -14,8 +19,38 @@ const HeaderRow = styled.div`
   margin-bottom: 20px;
 `;
 
-const WorkflowHeader = styled.h2`
-  text-align: flex-start;
+const Title = styled.h1`
+  font-size: 18px;
+  font-weight: bold;
+  color: #2D3142; 
+  margin-bottom: 20px;
+`;
+
+const HeaderContent = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+`;
+
+const LeftSection = styled.div`
+  display: flex;
+  flex-direction: column;
+`;
+
+const RightSection = styled.div`
+  display: flex;
+  align-items: center;
+`;
+
+const Label = styled.span`
+  font-weight: 600;
+  color: #2D3142;
 `;
 
 /* Flexbox wrapper to place Step and Notes side by side */
@@ -164,7 +199,7 @@ const Button = styled.button`
   padding: 8px 20px;
   border-radius: 4px;
   cursor: pointer;
-  font-weight: bold;
+  font-weight: semi-bold;
 
   &:disabled {
     background-color: #ccc;
@@ -191,19 +226,33 @@ const Button = styled.button`
 `;
 
 
-const SubStep = styled.div`
+const SubStepContainer = styled.div`
   margin-left: 20px;
-  padding: 8px;
-  border-left: 4px solid ${(props) => (props.completed ? '#28a745' : '#ffc107')};
-  background-color: ${(props) => (props.completed ? '#e6ffe6' : '#fffbea')};
   margin-bottom: 8px;
+  padding: 8px;
+  border-left: 4px solid 
+    ${(props) => {
+      if (props.status === 'completed') return '#28a745';
+      if (props.status === 'in_progress') return '#ffc107';
+      return '#6c757d';
+    }};
+  background-color: 
+    ${(props) => {
+      if (props.status === 'completed') return '#e6ffe6';
+      if (props.status === 'in_progress') return '#fffbea';
+      return '#f0f0f0';
+    }};
   border-radius: 4px;
+`;
+
+const SubStepHeader = styled.div`
   display: flex;
+  justify-content: space-between;
   align-items: center;
 `;
 
-const Checkbox = styled.input`
-  margin-right: 10px;
+const SubStepName = styled.text`
+  font-weight: normal;
 `;
 
 /* Progress Bar Styles */
@@ -230,66 +279,274 @@ const ProgressBarFill = styled.div`
   transition: width 0.3s ease; 
 `;
 
-export const ManufacturerWorkflowPage = ({ workflow }) => {
+export const ManufacturerWorkflowPage = () => {
+  const { workflowId } = useParams();
+  const [workflow, setWorkflow] = useState(null);
   const [steps, setSteps] = useState([]);
+  const [error, setError] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalProps, setModalProps] = useState({});
+
+  const openModal = (props) => {
+  setModalProps(props);
+  setModalOpen(true);
+};
+
+const closeModal = () => {
+  setModalOpen(false);
+  setModalProps({});
+};
 
   useEffect(() => {
-    // Fetch workflow details and steps (mock data for now)
-    setSteps([
-      {
-        name: 'Grading',
-        status: 'Pending',
-        subSteps: [
-          { name: 'Initial Grading', completed: false },
-          { name: 'Quality Check', completed: false },
-          { name: 'Final Grading', completed: false },
-        ],
+    axios
+      .get(`http://localhost:5000/api/workflow/${workflowId}`)
+      .then((response) => {
+        setWorkflow(response.data);
+        console.log("Workflow details: ", workflow)
+        setIsLoading(false);
+      })
+      .catch((error) => {
+        console.error("Error fetching workflow details:", error);
+        setError(error);
+        setIsLoading(false);
+      });
+  }, [workflowId]);
+
+  useEffect(() => {
+    if (!workflow || !workflow.versions || workflow.versions.length === 0) return;
+
+    const currentVersion = workflow?.versions?.find(v => v.status === 'pending')
+      || workflow?.versions?.[0];
+    
+    console.log("Current version of the wf: ", currentVersion)
+
+    const mappedSteps = (currentVersion.steps ?? []).map((step) => {
+
+      const stepStatus = mapServerStatusToUiStatus(step);
+      const subSteps = (step.sub_steps ?? []).map((sub) => ({
+        name: sub.name,
+        completed: sub.status === 'completed',
+        status: sub.status,
         notes: '',
-      },
-      {
-        name: 'Cutting',
-        status: 'Pending',
-        subSteps: [
-          { name: 'Cutting Preparation', completed: false },
-          { name: 'Cutting Execution', completed: false },
-        ],
-        notes: '',
-      },
-      {
-        name: 'Washing',
-        status: 'Pending',
-        subSteps: [
-          { name: 'First Wash', completed: false },
-          { name: 'Second Wash', completed: false },
-        ],
-        notes: '',
-      },
-    ]);
+        order: step.order 
+      }));
+
+      return {
+        name: step.pluginName, 
+        status: stepStatus, 
+        order: step.order,
+        subSteps,
+        notes: ''
+      };
+    });
+
+    setSteps(mappedSteps);
   }, [workflow]);
 
-  const handleSubStepChange = (stepIndex, subStepIndex) => {
-    setSteps((prevSteps) => {
-      const updatedSteps = [...prevSteps];
-      updatedSteps[stepIndex].subSteps[subStepIndex].completed =
-        !updatedSteps[stepIndex].subSteps[subStepIndex].completed;
-      return updatedSteps;
+  if (isLoading) return <div>Loading...</div>;
+  if (error) return <div>Error: {error.message}</div>;
+  if (!workflow) return <div>No workflow data found</div>;
+
+  // Handle plugin-level Start/Next
+  const handleStatusChange = async (stepIndex, actionType) => {
+    try {
+    const updatedSteps = [...steps];
+    const stepOrder = updatedSteps[stepIndex].order;
+    const currentPlugin = updatedSteps[stepIndex];
+    const workflowId = workflow.workflow_id;
+    const pluginName = currentPlugin.name;
+      
+    // For "complete" plugin, ensure all sub-steps are completed
+    if (actionType === 'next') {
+      const allSubStepsCompleted = currentPlugin.subSteps.every(
+        sub => sub.status === 'completed'
+      );
+      if (!allSubStepsCompleted) {
+        toast.error("Please complete all sub-steps before completing the plugin.");
+        return;
+      }
+      }
+      
+    // Confirmation modal for plugin actions
+    let confirmMsg = "";
+    if (actionType === 'start') {
+      if (currentPlugin.status !== 'Pending') {
+        toast.error("Plugin already started.");
+        return;
+      }
+      confirmMsg = "Are you sure you want to start this plugin?";
+    } else if (actionType === 'next') {
+      confirmMsg = "Are you sure you want to complete this plugin?";
+    }
+    if (!window.confirm(confirmMsg)) return;
+
+      let payload = {};
+
+    if (actionType === 'start') {
+      payload = {
+        started_at: new Date().toISOString(),
+        status: 'in_progress'
+      };
+      updatedSteps[stepIndex].status = 'In Progress';
+    } else if (actionType === 'next') {
+      payload = {
+        completed_at: new Date().toISOString(),
+        status: 'completed'
+      };
+      updatedSteps[stepIndex].status = 'Completed';
+
+      if (stepIndex + 1 < updatedSteps.length) {
+        updatedSteps[stepIndex + 1].status = 'Pending';
+      }
+    }
+
+    await axios.put(
+      `http://localhost:5000/api/workflow/${workflowId}/step/${stepOrder}`,
+      payload
+    );
+
+      setSteps(updatedSteps);
+      toast.success("Plugin status updated successfully.");
+
+      // Call the API to trigger gRPC execution after updating status
+    if (actionType === 'start') {
+      await axios.post(`http://localhost:5000/api/plugin/grpc`, {
+        workflow_id: workflowId,
+        plugin_name: pluginName,
+        action: 'execution'
+      });
+
+      toast.success("Plugin execution request sent to the core system successfully.");
+    }
+  } catch (error) {
+      console.error('Error updating plugin step:', error);
+      toast.error("Error updating plugin status.");
+  }
+  };
+
+  // Handle sub-step actions: "start" or "complete"
+  const handleSubStepAction = async (stepIndex, subIndex, actionType) => {
+    try {
+    const updated = [...steps];
+    const currentPlugin = updated[stepIndex];
+      const workflowId = workflow.workflow_id;
+      
+    // Prevent starting a sub-step unless plugin is started (In Progress)
+    if (currentPlugin.status === 'Pending') {
+      toast.error("Please start the plugin before starting a sub-step.");
+      return;
+    }
+      
+    const stepOrder = currentPlugin.order;
+    const sub = currentPlugin.subSteps[subIndex];
+
+    let payload = {};
+    if (actionType === 'start') {
+      payload = {
+        started_at: new Date().toISOString(),
+        status: 'in_progress'
+      };
+      sub.status = 'in_progress';
+    } else if (actionType === 'complete') {
+      payload = {
+        completed_at: new Date().toISOString(),
+        status: 'completed'
+      };
+      sub.status = 'completed';
+    }
+
+    await axios.put(
+      `http://localhost:5000/api/workflow/${workflowId}/step/${stepOrder}/substep/${encodeURIComponent(sub.name)}`,
+      payload
+    );
+
+      setSteps(updated);
+      toast.success("Sub-step status updated successfully.");
+  } catch (error) {
+      console.error('Error updating sub-step:', error);
+      toast.error("Error updating sub-step status.");
+  }
+  };
+
+  // --- For date fields, ensure you check they exist before using them
+  const assignedDate = workflow.created_at
+    ? new Date(workflow.created_at).toLocaleDateString()
+    : 'N/A';
+  const deadline = workflow.expected_date
+    ? new Date(workflow.expected_date).toLocaleDateString()
+    : 'N/A';
+
+  // Wrapper function for plugin actions with modal confirmation
+  const confirmPluginAction = (stepIndex, actionType) => {
+    const currentPlugin = steps[stepIndex];
+    if (actionType === 'next') {
+      const allSubStepsCompleted = currentPlugin.subSteps.every(
+        sub => sub.status === 'completed'
+      );
+      if (!allSubStepsCompleted) {
+        toast.error("Please complete all sub-steps before completing the plugin.");
+        return;
+      }
+    }
+    let confirmMsg = actionType === 'start'
+      ? "Are you sure you want to start this plugin?"
+      : "Are you sure you want to complete this plugin?";
+    openModal({
+      title: actionType === 'start' ? "Start Plugin" : "Complete Plugin",
+      message: confirmMsg,
+      onConfirm: async () => {
+        closeModal();
+        await handleStatusChange(stepIndex, actionType);
+      },
+      onCancel: closeModal
     });
   };
 
-  const handleStatusChange = (stepIndex, actionType) => {
-    setSteps((prevSteps) => {
-      const updatedSteps = [...prevSteps];
-      if (actionType === 'start') {
-        updatedSteps[stepIndex].status = 'In Progress';
-      } else if (actionType === 'next') {
-        updatedSteps[stepIndex].status = 'Completed';
-        if (stepIndex + 1 < updatedSteps.length) {
-          updatedSteps[stepIndex + 1].status = 'Pending';
-        }
-      }
-      return updatedSteps;
+  // Wrapper function for sub-step actions with modal confirmation
+  const confirmSubStepAction = (stepIndex, subIndex, actionType) => {
+    const currentPlugin = steps[stepIndex];
+    if (currentPlugin.status === 'Pending') {
+      toast.error("Please start the plugin before starting a sub-step.");
+      return;
+    }
+    let confirmMsg = actionType === 'start'
+      ? "Are you sure you want to start this sub-step?"
+      : "Are you sure you want to complete this sub-step?";
+    // Additional validations
+    if (actionType === 'start' && currentPlugin.subSteps[subIndex].status !== 'not_started') {
+      toast.error("Sub-step already started.");
+      return;
+    }
+    if (actionType === 'complete' && currentPlugin.subSteps[subIndex].status !== 'in_progress') {
+      toast.error("Sub-step must be in progress to complete.");
+      return;
+    }
+    openModal({
+      title: actionType === 'start' ? "Start Sub-step" : "Complete Sub-step",
+      message: confirmMsg,
+      onConfirm: async () => {
+        closeModal();
+        await handleSubStepAction(stepIndex, subIndex, actionType);
+      },
+      onCancel: closeModal
     });
   };
+
+  // const handleStatusChange = (stepIndex, actionType) => {
+  //   setSteps((prevSteps) => {
+  //     const updatedSteps = [...prevSteps];
+  //     if (actionType === 'start') {
+  //       updatedSteps[stepIndex].status = 'In Progress';
+  //     } else if (actionType === 'next') {
+  //       updatedSteps[stepIndex].status = 'Completed';
+  //       if (stepIndex + 1 < updatedSteps.length) {
+  //         updatedSteps[stepIndex + 1].status = 'Pending';
+  //       }
+  //     }
+  //     return updatedSteps;
+  //   });
+  // };
 
   const handleIoTDataChange = (stepIndex, newData) => {
     setSteps((prevSteps) => {
@@ -315,23 +572,28 @@ export const ManufacturerWorkflowPage = ({ workflow }) => {
     : 0;
 
   return (
-    <Container>
-      <HeaderRow>
-        <WorkflowHeader>{workflow?.name || 'Workflow Progress'}</WorkflowHeader>
-        {/* Progress Bar */}
-        <ProgressBarWrapper>
-          <ProgressBarContainer>
-            <ProgressBarFill progress={overallProgress} />
-          </ProgressBarContainer>
-          <span>{overallProgress}%</span>
-        </ProgressBarWrapper>
-      </HeaderRow>
-      <p>Assigned Date: {workflow?.description}</p>
-      <p>Expoter ID: {workflow?.exporter}</p>
-      <p>Deadline: {workflow?.dateSent}</p>
-        
+    <Layout role="manufacturer">
+      <Container>
+        <Header title="Worklow Progress" role="manufacturer"></Header>
+      <HeaderContent>
+        {/* Left Section for Assigned Date, Exporter ID, and Deadline */}
+        <LeftSection>
+          <Label>Assigned Date: {assignedDate}</Label>
+          <Label>Exporter ID: {workflow?.exporter_id}</Label>
+          <Label>Deadline: {deadline}</Label>
+        </LeftSection>
 
-      <h3>Workflow Steps and Sub-Steps</h3>
+        {/* Right Section for Progress Bar */}
+        <RightSection>
+          <ProgressBarWrapper>
+            <ProgressBarContainer>
+              <ProgressBarFill progress={overallProgress} />
+            </ProgressBarContainer>
+            <span>{overallProgress}%</span>
+          </ProgressBarWrapper>
+        </RightSection>
+      </HeaderContent>
+      <Title>Plugins and Sub-Steps</Title>
       {steps.map((step, index) => (
         <StepWrapper key={index}>
           {/* Step Section */}
@@ -341,27 +603,51 @@ export const ManufacturerWorkflowPage = ({ workflow }) => {
               <StatusLabel status={step.status}>{step.status}</StatusLabel>
             </StepHeader>
 
-            {step.subSteps.map((subStep, subIndex) => (
-              <SubStep key={subIndex} completed={subStep.completed}>
-                <Checkbox type="checkbox" checked={subStep.completed} />
-                {subStep.name}
-              </SubStep>
-            ))}
-            <ButtonGroup>
-            <Button
-              onClick={() => handleStatusChange(index, 'start')}
-              disabled={step.status !== 'Pending'}
-            >
-              Start
-            </Button>
-            <Button
-              primary
-              onClick={() => handleStatusChange(index, 'next')}
-              disabled={step.status !== 'In Progress'}
-            >
-              Next
-            </Button>
-            </ButtonGroup>
+             {/* Render each sub-step inside this plugin */}
+              {step.subSteps.map((subStep, subIndex) => (
+                <SubStepContainer
+                  key={subIndex}
+                  status={subStep.status}
+                >
+                  <SubStepHeader>
+                    <SubStepName>{subStep.name}</SubStepName>
+                    <div>
+                      {/* Show "Start Sub-step" if status is 'not_started' */}
+                      {subStep.status === 'not_started' && (
+                        <Button
+                          onClick={() => confirmSubStepAction(index, subIndex, 'start')}
+                        >
+                          Start Sub-step
+                        </Button>
+                      )}
+                      {/* Show "Complete Sub-step" if status is 'in_progress' */}
+                      {subStep.status === 'in_progress' && (
+                        <Button
+                          onClick={() => confirmSubStepAction(index, subIndex, 'complete')}
+                        >
+                          Complete Sub-step
+                        </Button>
+                      )}
+                      {/* If subStep.status === 'completed', no sub-step button needed */}
+                    </div>
+                  </SubStepHeader>
+                </SubStepContainer>
+              ))}
+            
+            {/* Plugin-level buttons */}
+              <ButtonGroup>
+                <Button
+                  onClick={() => confirmPluginAction(index, 'start')} disabled={step.status !== 'Pending'}
+                >
+                  Start Plugin
+                </Button>
+                <Button
+                  primary
+                  onClick={() => confirmPluginAction(index, 'next')} disabled={step.status !== 'In Progress'}
+                >
+                  Complete Plugin
+                </Button>
+              </ButtonGroup>
           </StepContainer>
 
           <RightColumn>
@@ -384,6 +670,26 @@ export const ManufacturerWorkflowPage = ({ workflow }) => {
           </RightColumn>
         </StepWrapper>
       ))}
-    </Container>
+      </Container>
+      <ToastContainer />
+      <ConfirmationModal
+        isOpen={modalOpen}
+        title={modalProps.title}
+        message={modalProps.message}
+        onConfirm={modalProps.onConfirm}
+        onCancel={modalProps.onCancel}
+      />
+    </Layout>
   );
 };
+
+// --- Helper to map server statuses to UI-friendly statuses
+function mapServerStatusToUiStatus(step) {
+  // If you store step-level status on the server, you can read that. If not, 
+  // you might decide a step is 'pending' if none of its sub_steps started, 
+  // 'in progress' if at least one sub_step is in_progress, etc.
+  // As an example:
+  if (step.completed_at) return 'Completed';
+  if (step.started_at) return 'In Progress';
+  return 'Pending';
+}

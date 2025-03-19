@@ -1,51 +1,45 @@
-const Workflow = require("../models/Worflow");
+const Workflow = require('../models/Worflow');
 const {
   validateWorkflowStructure,
   validateRequiredPlugins,
   validateWorkflowOrder,
   validateManufacturer,
   validateWorkflowVersion,
-} = require("../middlewares/workflowValidation");
+} = require('../middlewares/workflowValidation');
 
 // create a workflow
 exports.createWorkflow = async (req, res) => {
   try {
-    const { workflow_id, exporter_id, manufacturer_id, steps } = req.body;
+    const { workflow_id, exporter_id, manufacturer_id, expected_date, steps } =
+      req.body;
 
-    // // Basic check for versions array
-    // if (!versions || !Array.isArray(versions) || versions.length === 0) {
-    //   return res
-    //     .status(400)
-    //     .json({ message: "Workflow must have at least one version." });
-    // }
-
-    // Optionally, you could further validate that each version has the required properties:
-    // for (const versionObj of versions) {
-    //   if (
-    //     !versionObj.steps ||
-    //     !Array.isArray(versionObj.steps) ||
-    //     versionObj.steps.length === 0
-    //   ) {
-    //     return res
-    //       .status(400)
-    //       .json({ message: "Each version must include at least one step." });
-    //   }
-    // }
-
-    // // validation checks before saving the workflow
-    // await validateWorkflowStructure(req, res, () => {});
-    // await validateRequiredPlugins(req, res, () => {});
-    // await validateWorkflowOrder(req, res, () => {});
+    // Ensure that each step has started_at and completed_at fields
+    const initializedSteps = steps.map((step, index) => ({
+      pluginName: step.pluginName,
+      order: index + 1,
+      required_amount: step.required_amount || 0,
+      started_at: null,
+      completed_at: null,
+      sub_steps: step.sub_steps
+        ? step.sub_steps.map((subStep) => ({
+            name: subStep.name,
+            status: 'not_started',
+            started_at: null,
+            completed_at: null,
+          }))
+        : [],
+    }));
 
     // Create the workflow with an initial version entry
     const newWorkflow = new Workflow({
       workflow_id,
       exporter_id,
       manufacturer_id,
+      expected_date: expected_date ? new Date(expected_date) : null, // Store expected completion date
       versions: [
         {
           // versionNumber will default to 1, status defaults to "draft"
-          steps: steps,
+          steps: initializedSteps,
         },
       ],
     });
@@ -53,7 +47,7 @@ exports.createWorkflow = async (req, res) => {
     const savedWorkflow = await newWorkflow.save();
     res
       .status(201)
-      .json({ message: "Workflow created successfully!", savedWorkflow });
+      .json({ message: 'Workflow created successfully!', savedWorkflow });
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
@@ -63,13 +57,13 @@ exports.createWorkflow = async (req, res) => {
 exports.updateRequiredAmount = async (req, res) => {
   try {
     const { required_amount } = req.body;
-    if (typeof required_amount !== "number" || required_amount < 0) {
-      return res.status(400).json({ message: "Invalid required_amount" });
+    if (typeof required_amount !== 'number' || required_amount < 0) {
+      return res.status(400).json({ message: 'Invalid required_amount' });
     }
 
     const workflow = await Workflow.findById(req.params.id);
     if (!workflow)
-      return res.status(404).json({ message: "Workflow not found" });
+      return res.status(404).json({ message: 'Workflow not found' });
 
     let stepFound = false;
     workflow.steps = workflow.steps.map((step) => {
@@ -81,11 +75,11 @@ exports.updateRequiredAmount = async (req, res) => {
     });
 
     if (!stepFound)
-      return res.status(404).json({ message: "Step not found in workflow" });
+      return res.status(404).json({ message: 'Step not found in workflow' });
 
     workflow.updated_at = Date.now();
     await workflow.save();
-    res.json({ message: "Step updated successfully", workflow });
+    res.json({ message: 'Step updated successfully', workflow });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -104,9 +98,11 @@ exports.getAllWorkflows = async (req, res) => {
 // get a workflow by id
 exports.getAWorkflow = async (req, res) => {
   try {
-    const workflow = await Workflow.findById(req.params.id);
+    const workflow = await Workflow.findOne({
+      workflow_id: req.params.workflow_id,
+    });
     if (!workflow)
-      return res.status(404).json({ message: "Workflow not found" });
+      return res.status(404).json({ message: 'Workflow not found' });
     res.json(workflow);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -142,14 +138,14 @@ exports.getWorkflowVersions = async (req, res) => {
     const workflowId = req.params.workflow_id;
 
     // Ensure it's a string before querying
-    if (typeof workflowId !== "string") {
-      return res.status(400).json({ error: "Invalid workflow_id format" });
+    if (typeof workflowId !== 'string') {
+      return res.status(400).json({ error: 'Invalid workflow_id format' });
     }
 
     // Retrieve the workflow document
     const workflow = await Workflow.findOne({ workflow_id: workflowId });
     if (!workflow) {
-      return res.status(404).json({ message: "Workflow not found" });
+      return res.status(404).json({ message: 'Workflow not found' });
     }
 
     // Optionally sort the versions array by versionNumber descending
@@ -230,7 +226,7 @@ exports.updateWorkflow = async (req, res) => {
       workflow_id: req.params.workflow_id,
     });
     if (!existingWorkflow) {
-      return res.status(404).json({ message: "Workflow not found" });
+      return res.status(404).json({ message: 'Workflow not found' });
     }
 
     // Optional: perform any validation checks here
@@ -250,7 +246,7 @@ exports.updateWorkflow = async (req, res) => {
     // status and steps can come from req.body, or default as needed
     const newVersion = {
       versionNumber: newVersionNumber,
-      status: req.body.status || "draft", // or some logic to determine new status
+      status: req.body.status || 'draft', // or some logic to determine new status
       steps: req.body.steps || [], // or copy from the old version if you want
     };
 
@@ -264,7 +260,7 @@ exports.updateWorkflow = async (req, res) => {
     await existingWorkflow.save();
 
     res.status(200).json({
-      message: "New version added to workflow",
+      message: 'New version added to workflow',
       workflow: existingWorkflow,
     });
   } catch (err) {
@@ -300,18 +296,18 @@ exports.updateWorkflow = async (req, res) => {
 exports.updateWorkflowStatus = async (req, res) => {
   try {
     const { status, versionNumber } = req.body;
-    const validStatuses = ["draft", "pending", "in_progress", "completed"];
+    const validStatuses = ['draft', 'pending', 'in_progress', 'completed'];
 
     // Validate status
     if (!validStatuses.includes(status)) {
-      return res.status(400).json({ message: "Invalid status" });
+      return res.status(400).json({ message: 'Invalid status' });
     }
 
     // Validate versionNumber
-    if (typeof versionNumber !== "number") {
+    if (typeof versionNumber !== 'number') {
       return res
         .status(400)
-        .json({ message: "versionNumber is required and must be a number" });
+        .json({ message: 'versionNumber is required and must be a number' });
     }
 
     // Find the workflow by its ID
@@ -319,7 +315,7 @@ exports.updateWorkflowStatus = async (req, res) => {
       workflow_id: req.params.workflow_id,
     });
     if (!workflow) {
-      return res.status(404).json({ message: "Workflow not found" });
+      return res.status(404).json({ message: 'Workflow not found' });
     }
 
     // Find the index of the version with the matching versionNumber
@@ -327,7 +323,7 @@ exports.updateWorkflowStatus = async (req, res) => {
       (v) => v.versionNumber === versionNumber
     );
     if (versionIndex === -1) {
-      return res.status(404).json({ message: "Version not found" });
+      return res.status(404).json({ message: 'Version not found' });
     }
 
     // Update the status of the specific version
@@ -351,9 +347,9 @@ exports.deleteWorkflow = async (req, res) => {
   try {
     const workflow = await Workflow.findByIdAndDelete(req.params.id);
     if (!workflow)
-      return res.status(404).json({ message: "Workflow not found" });
+      return res.status(404).json({ message: 'Workflow not found' });
 
-    res.json({ message: "Workflow deleted successfully" });
+    res.json({ message: 'Workflow deleted successfully' });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -362,7 +358,7 @@ exports.deleteWorkflow = async (req, res) => {
 // Check Validations
 exports.checkValidations = async (req, res, next) => {
   try {
-    console.log("Received workflow data for validation:", req.body);
+    console.log('Received workflow data for validation:', req.body);
 
     // Run each validation and return immediately if any fail
     let validationFailed = false;
@@ -383,9 +379,9 @@ exports.checkValidations = async (req, res, next) => {
     if (validationFailed) return;
 
     // if all validations pass, send success response
-    res.status(200).json({ message: "Workflow validation successful." });
+    res.status(200).json({ message: 'Workflow validation successful.' });
   } catch (err) {
-    console.error("Validation error:", err.message);
+    console.error('Validation error:', err.message);
     if (!res.headersSent) {
       res.status(500).json({ error: err.message });
     }
@@ -412,5 +408,84 @@ exports.getWorkflowsByManufacturer = async (req, res) => {
     res.status(200).json(workflows);
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+};
+
+// update the start and completion tmime of a step/ plugin
+exports.updateStepTimme = async (req, res) => {
+  try {
+    const { workflow_id, step_order } = req.params;
+    const { started_at, completed_at } = req.body;
+
+    const workflow = await Workflow.findOne({ workflow_id });
+
+    if (!workflow) {
+      return res.status(404).json({ message: 'Workflow not found' });
+    }
+
+    let stepUpdated = false;
+
+    workflow.versions.forEach((version) => {
+      version.steps.forEach((step) => {
+        if (step.order == step_order) {
+          if (started_at) step.started_at = new Date(started_at);
+          if (completed_at) step.completed_at = new Date(completed_at);
+          stepUpdated = true;
+        }
+      });
+    });
+
+    if (!stepUpdated) {
+      return res.status(404).json({ message: 'Step not found' });
+    }
+
+    workflow.updated_at = new Date();
+    await workflow.save();
+
+    res.json({ message: 'Step updated successfully', workflow });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// update the start and completion tmime of a sub step
+exports.updateSubStepTime = async (req, res) => {
+  try {
+    const { workflow_id, step_order, substep_name } = req.params;
+    const { started_at, completed_at, status } = req.body;
+
+    const workflow = await Workflow.findOne({ workflow_id });
+
+    if (!workflow) {
+      return res.status(404).json({ message: 'Workflow not found' });
+    }
+
+    let subStepUpdated = false;
+
+    workflow.versions.forEach((version) => {
+      version.steps.forEach((step) => {
+        if (step.order == step_order) {
+          step.sub_steps.forEach((subStep) => {
+            if (subStep.name === substep_name) {
+              if (started_at) subStep.started_at = new Date(started_at);
+              if (completed_at) subStep.completed_at = new Date(completed_at);
+              if (status) subStep.status = status;
+              subStepUpdated = true;
+            }
+          });
+        }
+      });
+    });
+
+    if (!subStepUpdated) {
+      return res.status(404).json({ message: 'Sub-step not found' });
+    }
+
+    workflow.updated_at = new Date();
+    await workflow.save();
+
+    res.json({ message: 'Sub-step updated successfully', workflow });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
 };

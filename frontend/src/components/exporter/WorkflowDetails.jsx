@@ -6,26 +6,23 @@ import { useUser } from "../../context/UserContext";
 import { FaArrowRight } from "react-icons/fa";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPaperPlane } from "@fortawesome/free-solid-svg-icons";
+import Layout from "../MainLayout";
+import Header from "../Header";
+import { toast, ToastContainer } from "react-toastify"; // Import Toast
+import "react-toastify/dist/ReactToastify.css";
 
 // Styled Components
 const PageContainer = styled.div`
   display: flex;
   justify-content: space-between;
-  width: 90%;
-  height: 80vh;
-  margin: 60px auto;
+  width: 100%;
   padding: 20px;
   border-radius: 8px;
   box-sizing: border-box;
-
-  @media (max-width: 768px) {
-    flex-direction: column;
-    height: auto;
-  }
 `;
 
 const LeftContainer = styled.div`
-  width: 75%;
+  width: 70%;
   padding: 20px;
   border-radius: 8px;
   box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
@@ -34,23 +31,44 @@ const LeftContainer = styled.div`
 `;
 
 const RightContainer = styled.div`
-  width: 25%;
+  width: 30%;
   padding: 20px;
   background: rgba(255, 255, 255, 0.85);
   border-radius: 8px;
   box-shadow: 2px 2px 15px rgba(0, 0, 0, 0.15);
   border-left: 3px solid #ccc;
-  backdrop-filter: blur(10px);
   display: flex;
   flex-direction: column;
+  justify-content: space-between; /* Ensures spacing */
+  height: auto;
+`;
+
+const InfoRow = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  font-size: 16px;
+`;
+
+const Label = styled.span`
+  font-weight: semi-bold;
+  color: #333;
+`;
+
+const StatusContainer = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
 `;
 
 const StatusLabel = styled.span`
-  padding: 5px 10px;
-  border-radius: 5px;
+  padding: 6px 10px;
+  border-radius: 10px;
   color: white;
   font-size: 14px;
-  width: 60px;
+  font-weight: 600;
   background: ${(props) =>
     props.status === "pending" ? "#FFC107" :
     props.status === "in progress" ? "#4CAF50" :
@@ -66,7 +84,7 @@ const StepsContainer = styled.div`
 `;
 
 const StepBox = styled.div`
-   background: rgba(216, 149, 39, 0.3);
+  background: rgba(216, 149, 39, 0.3);
   border-radius: 8px;
   padding: 15px 20px;
   box-shadow: 2px 2px 8px rgba(216, 149, 39, 0.8);
@@ -74,17 +92,34 @@ const StepBox = styled.div`
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 50px;
+  height: auto; /* Adjust height */
   font-size: 14px;
   font-weight: bold;
   min-width: 140px;
   text-align: center;
-  gap: 5px;
+  gap: 10px; /* More spacing */
 `;
+
+const RegisterButton = styled.button`
+  background: rgba(216, 149, 39, 0.8);
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  margin-top: 8px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 14px;
+  width: 100%;
+
+  &:hover {
+    background: rgba(223, 144, 17, 0.8);
+  }
+`;
+
 
 const PluginName = styled.div`
   font-size: 16px;
-  font-weight: bold;
+  font-weight: 400;
   margin-bottom: 8px;
 `;
 
@@ -126,7 +161,7 @@ const Tab = styled.button`
 
 const ButtonsContainer = styled.div`
   display: flex;
-  margin-top: auto;
+  margin-top: 50px;
 `;
 
 // Buttons
@@ -143,6 +178,17 @@ const Button = styled.button`
   &:hover {
     background: ${(props) => props.hoverColor || "#1F2532"};
   }
+`;
+
+const SendButton = styled(Button)`
+  margin-top: auto; /* Pushes button to bottom */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 12px 16px;
+  font-size: 16px;
 `;
 
 const Dropdown = styled.select`
@@ -163,10 +209,6 @@ const DropdownOption = styled.option`
   color: black;
   background: white;
 `;
-
-const Label = styled.label`
-  margin-top: 10px;
-`
 
 const AnimatedDiv = styled.div`
   opacity: 20;
@@ -265,7 +307,7 @@ const WorkflowDetails = ({ }) => {
     const handleConfirmWorkflow = async () => {
         
     if (!user?.exporter_id || !workflowID || initialSteps.length === 0 || !selectedManufacturer) {
-      alert("Please fill all fields before confirming.");
+      toast.error("Please fill all fields before confirming.");
       return;
     }
       
@@ -288,17 +330,17 @@ const WorkflowDetails = ({ }) => {
       console.log("Submitting Workflow Data:", workflowData);
     try {
       await axios.post("http://localhost:5000/api/workflow/", workflowData);
-      alert("Workflow Created Successfully!");
+      toast.success("Workflow Created Successfully!");
     } catch (error) {
       console.error(error);
-      alert(error.message);
+      toast.error(error.message);
     }
   };
 
   const handleWorkflowStatusUpdate = async () => {
     console.log("Selected version in update:", selectedVersion);
     if (!selectedVersion) {
-      alert("No version selected for status update.");
+      toast.error("No version selected for status update.");
       return;
     }
     // Only update if current status is draft; you can add more logic if needed.
@@ -319,19 +361,41 @@ const WorkflowDetails = ({ }) => {
       setSelectedVersion((prev) => ({ ...prev, status: newStatus }));
       // Optionally, refresh versions list:
       getAllVersions();
-      alert(`Version ${selectedVersion.versionNumber} status updated to ${newStatus}`);
+      toast.success(`Version ${selectedVersion.versionNumber} has been selected and sent to manufacturer`);
     } catch (error) {
       console.error("Error updating workflow status:", error);
-      alert("Failed to update status: " + error.message);
+      toast.error("Failed to update status: " + error.message);
     }
   }
 
+  const handleRegisterPlugin = async (step) => {
+    const pluginData = {
+    workflow_id: workflowID,
+    plugin_name: step.pluginName,
+    userRequirement: step.required_amount,
+    action: "register",
+  };
+
+  try {
+    const response = await axios.post("http://localhost:5000/api/plugin/grpc", pluginData, {
+      headers: { "Content-Type": "application/json" },
+    });
+
+    toast.success("Plugin registered successfully!");
+    console.log("Response:", response.data);
+  } catch (error) {
+    console.error("Error registering plugin:", error);
+    toast.error("Failed to register plugin.");
+  }
+};
+
+
   return (
+    <Layout role="exporter">
+      <Header title="Workflow Details"></Header>
     <PageContainer>
       {/* Left Side - Version Control */}
       <LeftContainer>
-        <h2>Workflow Details</h2>
-
         {/* Tabs for Each Version */}
         <TabsContainer>
             {workflowVersions.map((ver, index) => (
@@ -359,7 +423,10 @@ const WorkflowDetails = ({ }) => {
                   <PluginName>{step.pluginName}</PluginName>
                 {step.required_amount !== undefined && step.required_amount !== "" && (
           <RequiredAmount>Required: {step.required_amount}</RequiredAmount>
-        )}
+                  )}
+                  <RegisterButton onClick={() => handleRegisterPlugin(step)}>
+    Register
+  </RegisterButton>
               </StepBox>
               {index < arr.length - 1 && <FaArrowRight size={20} color="#2D3142" />}
             </React.Fragment>
@@ -390,36 +457,37 @@ const WorkflowDetails = ({ }) => {
       {/* Right Side - Workflow Details */}
       <RightContainer>
 
-        <label>Workflow ID:</label>
-        <p><b>{workflowID || "N/A"}</b></p>
+        <InfoRow>
+    <Label>Workflow ID:</Label> <span>{workflowID || "N/A"}</span>
+  </InfoRow>
 
-        {/* <label>Exporter ID:</label>
-        <p><b>{exporter_id || "Generating..."}</b></p> */}
 
-        <label>Status:</label>
-        <StatusLabel>{status}</StatusLabel>
+       <InfoRow>
+    <Label>Selected Version:</Label> <span>{selectedVersion?.versionNumber || "N/A"}</span>
+  </InfoRow>
 
-        <Label>Assigned Manufacturer:</Label>
-        <p>{selectedManufacturer ? manufacturers.find(m => m.user_id === selectedManufacturer)?.username : "Not Assigned"}</p>
+        <InfoRow>
+    <Label>Status:</Label>
+    <StatusContainer>
+      <StatusLabel status={status}>{status}</StatusLabel>
+    </StatusContainer>
+  </InfoRow>
 
-        <Button bgColor="#2D3142" 
-  hoverColor="#1F2532" 
-  style={{
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: "8px",
-    padding: "12px 16px",
-    fontSize: "16px",
-    marginTop: "20px", // Adjusted spacing
-    width: "100%", // Full width inside RightContainer
-    textAlign: "center",
-  }}onClick={handleWorkflowStatusUpdate}>
+
+        <InfoRow>
+    <Label>Assigned Manufacturer:</Label>
+    <span>{selectedManufacturer ? manufacturers.find(m => m.user_id === selectedManufacturer)?.username : "Not Assigned"}</span>
+  </InfoRow>
+
+        <SendButton bgColor="#2D3142" 
+  hoverColor="#1F2532" onClick={handleWorkflowStatusUpdate}>
           <FontAwesomeIcon icon={faPaperPlane} />Send to Manufacturer
-        </Button>
-      </RightContainer>
+        </SendButton>
+        </RightContainer>
+        <ToastContainer />
     </PageContainer>
-  );
+</Layout>
+      );
 };
 
 export default WorkflowDetails;

@@ -175,7 +175,7 @@ const workerProductivityData = [
 
   return (
     <Layout role="manufacturer">
-      <Header title="Dashboard" />
+      <Header title="Dashboard" role="manufacturer" />
       <Container>
         <LeftSection>
           <MetricsContainer>

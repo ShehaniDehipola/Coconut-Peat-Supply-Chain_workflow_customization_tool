@@ -3,6 +3,8 @@ import styled from 'styled-components';
 import { useUser } from '../../context/UserContext';
 import axios from 'axios'
 import Header from '../Header';
+import Layout from '../MainLayout';
+import { useNavigate } from 'react-router-dom';
 
 //
 // Styled Components
@@ -68,6 +70,7 @@ const TableHeaderCell = styled.th`
   border-bottom: 2px solid #ccc;
   padding: 0.5rem;
   background-color: rgba(45, 49, 66, 0.2);
+  color: #2D3142;
 `;
 
 const TableRow = styled.tr`
@@ -82,9 +85,11 @@ const TableCell = styled.td`
 `;
 
 const StatusBadge = styled.span`
-  padding: 0.3rem 0.6rem;
-  border-radius: 0.25rem;
+  padding: 5px 10px;
+  border-radius: 12px;
   color: #fff;
+  font-size: 13px;
+  font-weight: 600;
   background-color: ${({ status }) => {
     switch (status) {
       case 'pending':
@@ -122,7 +127,7 @@ const Button = styled.button`
   padding: 8px 20px;
   border-radius: 4px;
   cursor: pointer;
-  font-weight: bold;
+  font-weight: semi-bold;
   background-color: #2D3142;
   color: #fff;
   border: none;
@@ -133,6 +138,7 @@ const Button = styled.button`
 //
 const AllWorkflowsPage = () => {
   const { user } = useUser();
+   const navigate = useNavigate();
   const [allWorkflows, setAllWorkflows] = useState([]);
   const [exporterWorkflows, setExporterWorkflows] = useState([]); 
 
@@ -215,7 +221,12 @@ const AllWorkflowsPage = () => {
     });
   }, [exporterWorkflows, searchTerm, statusFilter, manufacturerFilter, dateFrom, dateTo]);
 
+   const ViewWorkflowInfo = (workflow_id) => {
+    navigate(`/workflow-info/${workflow_id}`)
+  };
+
   return (
+    <Layout role="exporter">
     <PageContainer>
       <Header title="Workflows"></Header>
 
@@ -281,6 +292,7 @@ const AllWorkflowsPage = () => {
             <TableHeaderCell>Workflow ID</TableHeaderCell>
             <TableHeaderCell>Manufacturer (ID, Name)</TableHeaderCell>
             <TableHeaderCell>Date Created</TableHeaderCell>
+            <TableHeaderCell>Date Expected</TableHeaderCell>
             <TableHeaderCell>Status</TableHeaderCell>
             <TableHeaderCell>Progress</TableHeaderCell>
             <TableHeaderCell>Action</TableHeaderCell>
@@ -295,6 +307,9 @@ const AllWorkflowsPage = () => {
               </TableCell>
               <TableCell>{new Date(wf.created_at).toLocaleDateString()}</TableCell>
               <TableCell>
+                {wf.expected_date}
+              </TableCell>
+              <TableCell>
                 {/* Find the first pending version directly inside JSX */}
         {wf.versions.find((version) => version.status === 'pending') ? (
           <StatusBadge status="pending">Pending</StatusBadge>
@@ -308,7 +323,7 @@ const AllWorkflowsPage = () => {
                 </ProgressBarContainer>
               </TableCell>
               <TableCell>
-                <Button onClick={() => alert(`View ${wf.workflowId}`)}>
+                <Button onClick={() => ViewWorkflowInfo(wf.workflow_id)}>
                   View
                 </Button>
               </TableCell>
@@ -322,6 +337,8 @@ const AllWorkflowsPage = () => {
         </tbody>
       </StyledTable>
     </PageContainer>
+
+    </Layout>
   );
 };
 

@@ -18,11 +18,6 @@ const Title = styled.h3`
   margin-left: 10px;
 `;
 
-const ButtonGroup = styled.div`
-  display: flex;
-  gap: 10px;
-`;
-
 const Button = styled.button`
   display: flex;
   align-items: center;
@@ -46,22 +41,24 @@ const Button = styled.button`
   }
 `;
 
-const Header = ({ title }) => {
+const Header = ({ title, role }) => {
   const navigate = useNavigate();
 
   return (
     <HeaderContainer>
       <Title>{title}</Title>
-      <div style={{ display: "flex", gap: "10px" }}>
-        <Button onClick={() => navigate("/add-plugin")}>
-          <img src={plusIcon} alt="plus" style={{ width: "18px", marginRight: "8px", color: "white" }} />
-          Add New Plugin
-        </Button>
-              <Button onClick={() => navigate("/new-workflow")}>
-                  <img src={plusIcon} alt="plus" style={{ width: "18px", marginRight: "8px" }} />
-          Create Workflow
-        </Button>
-      </div>
+      {role !== "manufacturer" && (
+        <div style={{ display: "flex", gap: "10px" }}>
+          <Button onClick={() => navigate("/add-plugin")}>
+            <img src={plusIcon} alt="plus" style={{ width: "18px", marginRight: "8px", color: "white" }} />
+            Add New Plugin
+          </Button>
+          <Button onClick={() => navigate("/new-workflow")}>
+            <img src={plusIcon} alt="plus" style={{ width: "18px", marginRight: "8px" }} />
+            Create Workflow
+          </Button>
+        </div>
+      )}
     </HeaderContainer>
   );
 };
