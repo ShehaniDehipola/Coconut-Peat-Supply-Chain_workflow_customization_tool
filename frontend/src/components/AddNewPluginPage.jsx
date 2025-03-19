@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from "react";
-import styled from "styled-components";
+import { useNavigate } from "react-router-dom"; 
+import styled, { keyframes }  from "styled-components";
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import axios from 'axios';
 import JSONViewer from "./parser/JsonViewer";
 import DSLInstructions from "./parser/InstructionsContainer";
 import Diagram from "./Diagram";
 import { generateGoCode } from "../utils/goGenerator";
 import { generateDSL } from "../utils/dslGenerator";
-import axios from 'axios';
 
 // Styled components for layout
 const AppContainer = styled.div`
@@ -89,7 +92,7 @@ const TerminalContainer = styled.div`
   width: 100%;
   height: 200px;
   background-color: #2D3142;
-  color: limegreen;
+  color: white;
   font-family: monospace;
   padding: 10px;
   overflow-y: auto;
@@ -141,6 +144,34 @@ transition: background-color 0.3s, color 0.3s;
   }
 `;
 
+// Loading spinner animation
+const spin = keyframes`
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+`;
+
+const LoadingOverlay = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+`;
+
+const Spinner = styled.div`
+  border: 6px solid rgba(255, 255, 255, 0.3);
+  border-top: 6px solid white;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  animation: ${spin} 1s linear infinite;
+`;
+
 const AddNewPluginPage = () => {
   const [model, setModel] = useState(null);
   const [pluginName, setPluginName] = useState("");
@@ -149,6 +180,8 @@ const AddNewPluginPage = () => {
   const [isResizing, setIsResizing] = useState(false);
   const [terminalLogs, setTerminalLogs] = useState([]);
   const [instructions, setInstructions] = useState("");
+  const [loading, setLoading] = useState(false); // Loading state
+  const navigate = useNavigate(); 
 
   const handleModelChange = (modelData) => {
     if (!modelData) {
@@ -166,11 +199,13 @@ const AddNewPluginPage = () => {
     }
 
     try {
+      setLoading(true); // Start loading animation
       const goCode = generateGoCode(model); // Call generateGoCode with the model
       console.log("Generated Go Code:\n", goCode);
-      alert("Go Code Generated! Check the console for details.");
+      toast.success("Go code generated successfully!");
     } catch (error) {
       console.error("Error generating Go code:", error);
+      toast.error("Error generating Go code. Try again");
     }
 
     const execute_logic = "// execute logic";
@@ -313,13 +348,13 @@ func main() {
 }
 `
     const requestBody = {
-      "updateContent": updateContent,
-      "goFileContent": goFileContent,
+    "updateContent": updateContent,
+    "goFileContent": goFileContent,
     "plugin_name": pluginName,
     "sensor_name": sensorName,
     "userRequirement": "100",
     "execute_logic": execute_logic,
-    "save_path": "../core_plugin",
+    "save_path": "../washing",
   };
     
     try {
@@ -330,24 +365,28 @@ func main() {
             "Content-Type": "application/json",
           },
         });
-      alert(response.data.message);
+      toast.success(response.data.message);
+
+      setTimeout(() => {
+        setLoading(false); // Stop loading after process completes
+        navigate("/new-workflow"); // Navigate to workflow page
+      }, 2000);
     } catch (error) {
       console.error(error);
-      alert("Failed to update the file.");
+      toast.error("Failed to update the file.");
       if (error.response && error.response.data) {
       console.log(`Failed to update the file: ${error.response.data.message}`);
     } else {
-      console.log("Failed to update the file. Please try again later.");
+        console.log("Failed to update the file. Please try again later.");
+        setLoading(false);
     }
     }
 
   };
 
   const handleUpdateModel = (updatedModel) => {
-    logToTerminal("Updating flowchart with validated instructions...");
     console.log("updated model", model)
     setModel(updatedModel); // Update the model state
-    logToTerminal("Flowchart updated successfully!");
   };
 
   useEffect(() => {
@@ -392,6 +431,12 @@ func main() {
 
   return (
     <AppContainer>
+      {loading && (
+        <LoadingOverlay>
+          <Spinner />
+        </LoadingOverlay>
+      )}
+
       <MainContainer>
         {/* Sidebar containing input fields and palette */}
         <SidebarContainer>
@@ -421,8 +466,8 @@ func main() {
           <ExportButton onClick={() => window.exportModel()}>
             Export Model
             </ExportButton>
-          <SubmitButton onClick={handleGenerateCode}>
-              Save Plugin
+          <SubmitButton onClick={handleGenerateCode} disabled={loading}>
+              {loading ? "Processing..." : "Save Plugin"}
             </SubmitButton>
           </ButtonContainer>
           <Diagram onExport={handleModelChange} model={model} />
@@ -437,9 +482,10 @@ func main() {
 
         {/* DSL Instructions */}
         <DSLContainer>
-          <DSLInstructions model={model} onUpdateModel={handleUpdateModel} logToTerminal={logToTerminal}  setInstructions={setInstructions} />
+          <DSLInstructions model={model} onUpdateModel={handleUpdateModel} isUpdateWorkFlow ={true} logToTerminal={logToTerminal}  setInstructions={setInstructions} />
         </DSLContainer>
       </MainContainer>
+      <ToastContainer />
     </AppContainer>
   );
 };

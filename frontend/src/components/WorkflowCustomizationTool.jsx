@@ -3,9 +3,10 @@ import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 import { useNavigate, useLocation } from 'react-router-dom';
 import styled from "styled-components";
 import { v4 as uuidv4 } from "uuid";
-import { FaArrowRight } from "react-icons/fa";
+import { FaArrowRight, FaTrash } from "react-icons/fa";
 import Layout from "./MainLayout";
 import Header from "./Header";
+import TerminalOutput from "./sidebar/TerminalOutput"
 
 // Styled Components
 const AppContainer = styled.div`
@@ -32,15 +33,18 @@ const WorkflowContainer = styled.div`
   gap: 10px; /* Add spacing between heading and canvas */
 `;
 
+const Title = styled.h1`
+  font-size: 18px;
+  font-weight: bold;
+  color: #2D3142; 
+  margin-bottom: 20px;
+`;
+
 const CanvasHeadingContainer = styled.div`
   display: flex;
   justify-content: space-between; /* Aligns left and right */
   align-items: center;
   padding-bottom: 10px;
-`;
-
-const CanvasHeading = styled.h3`
-  margin: 0;
 `;
 
 const BuildWorkflowButton = styled.button`
@@ -61,7 +65,7 @@ const Sidebar = styled.div`
   width: 200px; 
   background-color: #d3d2d0;
   border-right: 1px solid #ccc;
-  padding: 20px;
+  padding: 8px;
   box-sizing: border-box;
   flex-shrink: 0;
   height: 100vh;
@@ -212,6 +216,34 @@ const Button = styled.button`
   }
 `;
 
+const TerminalHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #1F2532;
+  padding: 8px 12px;
+  color: white;
+  font-weight: bold;
+`;
+
+const ClearButton = styled.button`
+  background: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  font-size: 14px;
+
+  &:hover {
+    color: #d9534f; /* Red hover effect */
+  }
+
+  svg {
+    margin-left: 5px;
+  }
+`;
+
 const TerminalContainer = styled.div`
   background-color: #2D3142;
   color: white;
@@ -219,14 +251,14 @@ const TerminalContainer = styled.div`
   height: 220px; /* Fixed height */
   overflow-y: auto;
   font-family: monospace;
-  font-size: 14px;
+  font-size: 12px;
   border: 1px solid #333;
   white-space: pre-wrap;
   display: flex;
   flex-direction: column;
   width: 100%;
   box-sizing: border-box;
-  margin-top: 0px; /* Remove unnecessary space */
+  margin-top: 0px;
 `;
 
 const TerminalLog = styled.div`
@@ -235,7 +267,6 @@ const TerminalLog = styled.div`
   opacity: ${(props) => (props.visible ? 1 : 0)};
   transition: opacity 0.3s ease-in-out;
 `;
-
 
 const WorkflowCustomizationTool = () => {
   const navigate = useNavigate();
@@ -328,30 +359,6 @@ const WorkflowCustomizationTool = () => {
 
 //   navigate("/workflow-details", { state: { workflow_id: workflowID, steps: stepsData }});
   // };
-
-  const TerminalOutput = ({ logs }) => {
-    const [displayedLogs, setDisplayedLogs] = useState([]);
-  const [index, setIndex] = useState(0);
-
-  useEffect(() => {
-    if (index < logs.length) {
-      const timer = setTimeout(() => {
-        setDisplayedLogs((prevLogs) => [...prevLogs, logs[index]]);
-        setIndex(index + 1);
-      }, 500); // Adjust the delay (milliseconds) for printing effect
-
-      return () => clearTimeout(timer);
-    }
-  }, [index, logs]);
-    
-  return (
-    <TerminalContainer>
-      {displayedLogs.map((log, i) => (
-        <TerminalLog key={i} visible>{log}</TerminalLog>
-      ))}
-    </TerminalContainer>
-  );
-};
 
   const formatStepsForLog = (steps) => {
   return steps.map((step, index) => 
@@ -458,7 +465,7 @@ const WorkflowCustomizationTool = () => {
         addLog("✅ Workflow updated successfully!");
         setProgress(100);
         // After successful update, navigate to the details page
-        // navigate("/workflow-details", { state: { workflow_id: workflowID, steps: stepsData } });
+        navigate("/workflow-details", { state: { workflow_id: workflowID, steps: stepsData } });
 
       } catch (error) {
         console.error("Error updating workflow:", error);
@@ -467,8 +474,8 @@ const WorkflowCustomizationTool = () => {
     } else {
       addLog("🆕 Creating new workflow...");
       setProgress(100);
-      // 🔹 Step 3: If creating a new workflow, navigate to workflow-details
-      // navigate("/workflow-details", { state: { workflow_id: workflowID, steps: stepsData } });
+      // Step 3: If creating a new workflow, navigate to workflow-details
+      navigate("/workflow-details", { state: { workflow_id: workflowID, steps: stepsData } });
     }
 
     } catch (error) {
@@ -593,7 +600,7 @@ const WorkflowCustomizationTool = () => {
           <Droppable droppableId="column1">
             {(provided) => (
               <Column ref={provided.innerRef} {...provided.droppableProps}>
-                <h3>{plugins.column1.name}</h3>
+                <Title>{plugins.column1.name}</Title>
                 {plugins.column1.items.map((item, index) => (
                   <Draggable key={item.id} draggableId={item.id} index={index}>
                     {(provided) => (
@@ -613,7 +620,7 @@ const WorkflowCustomizationTool = () => {
         {/* Workflow Canvas */}
         <Canvas>
           <CanvasHeadingContainer>
-            <CanvasHeading>{plugins.column2.name}</CanvasHeading>
+            <Title>{plugins.column2.name}</Title>
             <BuildWorkflowButton onClick={buildWorkflow}>{location.state?.workflow_id ? "Update Workflow" : "Build Workflow"}</BuildWorkflowButton>
           </CanvasHeadingContainer>
           <Droppable droppableId="column2">
@@ -690,7 +697,7 @@ const WorkflowCustomizationTool = () => {
             )}
             </Droppable>
         </Canvas>
-            <TerminalOutput logs={logs} />
+            <TerminalOutput logs={logs} setLogs={setLogs} />
           </MainContent>
       </AppContainer>
       </Layout>
