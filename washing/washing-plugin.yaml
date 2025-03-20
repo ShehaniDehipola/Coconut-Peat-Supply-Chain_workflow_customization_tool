@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: washing-plugin
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: washing-plugin
+  template:
+    metadata:
+      labels:
+        app: washing-plugin
+    spec:
+      containers:
+        - name: washing-plugin
+          image: harith2001/coconut-peat-supply-chain_core_system-washing:latest
+          ports:
+            - containerPort: 50054
+          env:
+            - name: MQTT_BROKER
+              value: 'ssl://34f3f472652e44989715e359655e32dc.s1.eu.hivemq.cloud:8883'
+            - name: CLIENT_ID
+              value: 'GradingPluginSubscriber'
+            - name: MQTT_USERNAME
+              value: 'harith'
+            - name: MQTT_PASSWORD
+              value: 'Harith123'
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: washing-plugin-service
+spec:
+  selector:
+    app: washing-plugin
+  ports:
+    - protocol: TCP
+      port: 50054
+      targetPort: 50054
+  type: ClusterIP
