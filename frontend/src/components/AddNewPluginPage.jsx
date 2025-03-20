@@ -219,12 +219,28 @@ const AddNewPluginPage = () => {
   const [model, setModel] = useState(null);
   const [pluginName, setPluginName] = useState("");
   const [sensorName, setSensorName] = useState("");
+  const [topics, setTopics] = useState([]);
   const [terminalHeight, setTerminalHeight] = useState(100);
   const [isResizing, setIsResizing] = useState(false);
   const [terminalLogs, setTerminalLogs] = useState([]);
   const [instructions, setInstructions] = useState("");
   const [loading, setLoading] = useState(false); // Loading state
   const navigate = useNavigate(); 
+
+  // Fetch topics from API
+  useEffect(() => {
+    const fetchTopics = async () => {
+      try {
+        const response = await axios.get("http://localhost:5000/api/topic/all");
+        setTopics(response.data);
+      } catch (error) {
+        console.error("Error fetching topics:", error);
+        toast.error("Failed to load sensor topics.");
+      }
+    };
+
+    fetchTopics();
+  }, []);
 
   const handleModelChange = (modelData) => {
     if (!modelData) {
@@ -493,12 +509,25 @@ func main() {
             />
 
             <Label htmlFor="sensorName">Sensor Name</Label>
-            <InputField
+            <select
               id="sensorName"
               value={sensorName}
               onChange={(e) => setSensorName(e.target.value)}
-              placeholder="Enter sensor name"
-            />
+              style={{
+                width: "100%",
+                padding: "5px",
+                fontSize: "14px",
+                marginBottom: "10px",
+                boxSizing: "border-box"
+              }}
+            >
+              <option value="">Select a sensor topic</option>
+              {topics.map((topic) => (
+                <option key={topic._id} value={topic.topic}>
+                  {topic.topic}
+                </option>
+              ))}
+            </select>
           </InputContainer>
           <PaletteContainer id="myPaletteDiv" />
         </SidebarContainer>
@@ -533,7 +562,7 @@ func main() {
 
         {/* DSL Instructions */}
         <DSLContainer>
-          <DSLInstructions model={model} onUpdateModel={handleUpdateModel} isUpdateWorkFlow ={false} logToTerminal={logToTerminal}  setInstructions={setInstructions} />
+          <DSLInstructions model={model} onUpdateModel={handleUpdateModel} isUpdateWorkFlow ={true} logToTerminal={logToTerminal}  setInstructions={setInstructions} />
         </DSLContainer>
       </MainContainer>
       <ToastContainer />
