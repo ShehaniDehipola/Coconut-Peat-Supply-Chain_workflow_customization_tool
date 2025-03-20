@@ -92,7 +92,7 @@ const CanvasButton = styled.button`
   transition: background-color 0.3s ease-in-out;
 
   &:hover {
-    background-color: #d9534f; /* Red hover effect */
+    background-color:rgb(79, 217, 84); 
   }
 
   svg {
@@ -316,9 +316,9 @@ const WorkflowCustomizationTool = () => {
     column1: {
       name: 'Plugins',
       items: [
-        { id: 'plugin-1', content: 'Grading' },
-        { id: 'plugin-2', content: 'Cutting' },
-        { id: 'plugin-3', content: 'Washing' },
+        { id: 'plugin-1', content: 'grading' },
+        { id: 'plugin-2', content: 'cutting' },
+        { id: 'plugin-3', content: 'washing' },
       ],
     },
     column2: {
@@ -332,17 +332,17 @@ const WorkflowCustomizationTool = () => {
 
   const pluginsData = {
     'plugin-1': {
-      name: 'Grading',
+      name: 'grading',
       steps: ['Collect Husks', 'Grade Husks'],
       inputs: [{ label: 'Required Husk Count:', parameter: 'requiredHusks' }],
     },
     'plugin-2': {
-      name: 'Cutting',
+      name: 'cutting',
       steps: ['Cut Husks ', 'Validate All Husks Processed'],
       inputs: [],
     },
     'plugin-3': {
-      name: 'Washing',
+      name: 'washing',
       steps: [
         'Fill Tanks r',
         'Wash for 24 Hours',
@@ -420,9 +420,9 @@ const WorkflowCustomizationTool = () => {
 
     // Build steps data from the canvas items
     const stepsData = plugins.column2.items.map((item, index) => ({
-      pluginName: pluginsData[item.id]?.name || 'Unknown Plugin',
+      pluginName: pluginsData[item.id]?.name || 'unknown Plugin',
       order: index + 1,
-      required_amount: Number(item.required_amount) || 20, // Ensure it's a valid number
+      required_amount: Number(item.required_amount) || 1000 , // Ensure it's a valid number
       sub_steps: pluginsData[item.id]?.steps || [],
     }));
 
@@ -444,11 +444,13 @@ const WorkflowCustomizationTool = () => {
         setProgress(0);
         return;
       }
-      if (step.required_amount < 1) {
-        addLog(` Validation failed: Step ${i + 1} requires a valid amount.`);
-        setProgress(0);
-        return;
-      }
+
+      // Only validate required_amount if it's NOT a grading plugin
+  if (step.pluginName !== 'grading' && (typeof step.required_amount !== 'number' || step.required_amount < 1)) {
+    addLog(` Validation failed: Step ${i + 1} requires a valid amount.`);
+    setProgress(0);
+    return;
+  }
 
       addLog(` Step ${i + 1}: ${step.pluginName} validated successfully.`);
       await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
