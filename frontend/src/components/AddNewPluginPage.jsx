@@ -1,39 +1,48 @@
 import React, { useState, useEffect } from "react";
-import styled from "styled-components";
+import { useNavigate } from "react-router-dom"; 
+import styled, { keyframes }  from "styled-components";
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import axios from 'axios';
 import JSONViewer from "./parser/JsonViewer";
 import DSLInstructions from "./parser/InstructionsContainer";
 import Diagram from "./Diagram";
+import TerminalOutput from "./sidebar/TerminalOutput";
 import { generateGoCode } from "../utils/goGenerator";
-import axios from 'axios';
+import { generateDSL } from "../utils/dslGenerator";
 
 // Styled components for layout
 const AppContainer = styled.div`
   display: flex;
   flex-direction: column;
-  height: 100%;
+  height: calc(100vh - 60px);
   overflow: hidden; /* Prevents scrolling */
 `;
 
 const ButtonContainer = styled.div`
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
   padding: 5px;
   text-align: right;
-  border-left: 1px solid #2D3142;
-  border-right: 1px solid #2D3142;
 `;
 
 const MainContainer = styled.div`
   display: flex;
   flex: 1; /* Allows children to grow */
   overflow: hidden; /* Prevents scrolling within this container */
+  margin-top: 10px;
+  height: calc(100vh - 10px);
 `;
 
 const SidebarContainer = styled.div`
-  width: 200px;
+  width: 220px;
   display: flex;
   flex-direction: column;
   padding: 10px;
   box-sizing: border-box;
   background-color: #d3d2d0;
+  margin-left: 80px;
 `;
 
 const InputContainer = styled.div`
@@ -62,6 +71,9 @@ const PaletteContainer = styled.div`
 const DiagramContainer = styled.div`
   flex: 1;
   position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 `;
 
 const JSONViewerContainer = styled.div`
@@ -71,10 +83,74 @@ const JSONViewerContainer = styled.div`
 `;
 
 const DSLContainer = styled.div`
-  border-right: 1px solid #3e3d3c;
+  width: 260px;
   display: flex;
   flex-direction: column; /* Ensures children stack vertically */
   overflow: hidden; /* Prevents overflow issues */
+`;
+
+const TerminalContainer = styled.div`
+  width: 100%;
+  height: 200px;
+  background-color: #2D3142;
+  color: white;
+  border-top: 1px solid #2D3142;
+  position: relative;
+  flex-shrink: 0;
+`;
+
+const TerminalHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #1F2532;
+  padding: 8px 12px;
+  color: white;
+  font-weight: semi-bold;
+`;
+
+const ClearButton = styled.button`
+  background: none;
+  border: 1px solid white;
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  font-size: 14px;
+  padding: 6px 12px;
+  border-radius: 4px;
+  transition: background-color 0.3s ease-in-out;
+
+  &:hover {
+    background-color: #d9534f; /* Red hover effect */
+  }
+
+  svg {
+    margin-left: 5px;
+  }
+`;
+
+const TerminalBodyContainer = styled.div`
+  width: 100%;
+  height: 200px;
+  background-color: #2D3142;
+  color: white;
+  font-family: monospace;
+  padding: 10px;
+  overflow-y: auto;
+  border-top: 1px solid #2D3142;
+  position: relative;
+  flex-shrink: 0;
+`;
+
+
+const ResizeHandle = styled.div`
+  height: 5px;
+  background: #555;
+  cursor: ns-resize;
+  position: absolute;
+  top: -5px;
+  width: 100%;
 `;
 
 const ExportButton = styled.button`
@@ -111,10 +187,60 @@ transition: background-color 0.3s, color 0.3s;
   }
 `;
 
+// Loading spinner animation
+const spin = keyframes`
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+`;
+
+const LoadingOverlay = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+`;
+
+const Spinner = styled.div`
+  border: 6px solid rgba(255, 255, 255, 0.3);
+  border-top: 6px solid white;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  animation: ${spin} 1s linear infinite;
+`;
+
 const AddNewPluginPage = () => {
   const [model, setModel] = useState(null);
   const [pluginName, setPluginName] = useState("");
   const [sensorName, setSensorName] = useState("");
+  const [topics, setTopics] = useState([]);
+  const [terminalHeight, setTerminalHeight] = useState(100);
+  const [isResizing, setIsResizing] = useState(false);
+  const [terminalLogs, setTerminalLogs] = useState([]);
+  const [instructions, setInstructions] = useState("");
+  const [loading, setLoading] = useState(false); // Loading state
+  const navigate = useNavigate(); 
+
+  // Fetch topics from API
+  useEffect(() => {
+    const fetchTopics = async () => {
+      try {
+        const response = await axios.get("http://localhost:5000/api/topic/all");
+        setTopics(response.data);
+      } catch (error) {
+        console.error("Error fetching topics:", error);
+        toast.error("Failed to load sensor topics.");
+      }
+    };
+
+    fetchTopics();
+  }, []);
 
   const handleModelChange = (modelData) => {
     if (!modelData) {
@@ -132,11 +258,13 @@ const AddNewPluginPage = () => {
     }
 
     try {
+      setLoading(true); // Start loading animation
       const goCode = generateGoCode(model); // Call generateGoCode with the model
       console.log("Generated Go Code:\n", goCode);
-      alert("Go Code Generated! Check the console for details.");
+      toast.success("Go code generated successfully!");
     } catch (error) {
       console.error("Error generating Go code:", error);
+      toast.error("Error generating Go code. Try again");
     }
 
     const execute_logic = "// execute logic";
@@ -166,7 +294,7 @@ COPY .env .env
 RUN go install github.com/joho/godotenv/cmd/godotenv@latest
 
 # Build the Go app
-RUN go build -o custom_plugin
+RUN go build -o washing_plugin
 
 # Create a minimal runtime image
 FROM alpine:latest
@@ -175,16 +303,16 @@ FROM alpine:latest
 WORKDIR /root/
 
 # Copy the pre-built binary from the builder stage
-COPY --from=builder /app/custom_plugin .
+COPY --from=builder /app/washing_plugin .
 
 # Copy the .env file to the runtime image's working directory
 COPY --from=builder /app/.env /root/
 
 # Make sure the binary is executable
-RUN chmod +x custom_plugin
+RUN chmod +x washing_plugin
 
 # Expose the gRPC port
-EXPOSE 50000
+EXPOSE 50054
 
 # Command to run the executable
 CMD ["./washing_plugin"]`
@@ -279,13 +407,13 @@ func main() {
 }
 `
     const requestBody = {
-      "updateContent": updateContent,
-      "goFileContent": goFileContent,
+    "updateContent": updateContent,
+    "goFileContent": goFileContent,
     "plugin_name": pluginName,
     "sensor_name": sensorName,
     "userRequirement": "100",
     "execute_logic": execute_logic,
-    "save_path": "../core_plugin",
+    "save_path": "../washing",
   };
     
     try {
@@ -296,14 +424,20 @@ func main() {
             "Content-Type": "application/json",
           },
         });
-      alert(response.data.message);
+      toast.success(response.data.message);
+
+      setTimeout(() => {
+        setLoading(false); // Stop loading after process completes
+        navigate("/new-workflow"); // Navigate to workflow page
+      }, 2000);
     } catch (error) {
       console.error(error);
-      alert("Failed to update the file.");
+      toast.error("Failed to update the file.");
       if (error.response && error.response.data) {
       console.log(`Failed to update the file: ${error.response.data.message}`);
     } else {
-      console.log("Failed to update the file. Please try again later.");
+        console.log("Failed to update the file. Please try again later.");
+        setLoading(false);
     }
     }
 
@@ -316,11 +450,52 @@ func main() {
 
   useEffect(() => {
   console.log("Current model state:", model);
-}, [model]);
+  }, [model]);
+  
+  const logToTerminal = (message) => {
+    setTerminalLogs((prevLogs) => [...prevLogs, message]);
+  };
 
+  const handleGenerateDSL = () => {
+    setTerminalLogs(["Starting DSL validation..."]);
+    try {
+      const result = generateDSL(model, logToTerminal, setInstructions);
+      setTerminalLogs((prevLogs) => [...prevLogs, result]);
+    } catch (error) {
+      setTerminalLogs((prevLogs) => [...prevLogs, `Error: ${error.message}`]);
+    }
+  };
+
+  const handleMouseDown = (e) => {
+    e.preventDefault();
+    setIsResizing(true);
+
+    const startY = e.clientY;
+    const startHeight = terminalHeight;
+
+    const onMouseMove = (event) => {
+      const newHeight = Math.max(50, Math.min(250, startHeight + (startY - event.clientY)));
+      setTerminalHeight(newHeight);
+    };
+
+    const onMouseUp = () => {
+      setIsResizing(false);
+      document.removeEventListener("mousemove", onMouseMove);
+      document.removeEventListener("mouseup", onMouseUp);
+    };
+
+    document.addEventListener("mousemove", onMouseMove);
+    document.addEventListener("mouseup", onMouseUp);
+  };
 
   return (
     <AppContainer>
+      {loading && (
+        <LoadingOverlay>
+          <Spinner />
+        </LoadingOverlay>
+      )}
+
       <MainContainer>
         {/* Sidebar containing input fields and palette */}
         <SidebarContainer>
@@ -334,12 +509,25 @@ func main() {
             />
 
             <Label htmlFor="sensorName">Sensor Name</Label>
-            <InputField
+            <select
               id="sensorName"
               value={sensorName}
               onChange={(e) => setSensorName(e.target.value)}
-              placeholder="Enter sensor name"
-            />
+              style={{
+                width: "100%",
+                padding: "5px",
+                fontSize: "14px",
+                marginBottom: "10px",
+                boxSizing: "border-box"
+              }}
+            >
+              <option value="">Select a sensor topic</option>
+              {topics.map((topic) => (
+                <option key={topic._id} value={topic.topic}>
+                  {topic.topic}
+                </option>
+              ))}
+            </select>
           </InputContainer>
           <PaletteContainer id="myPaletteDiv" />
         </SidebarContainer>
@@ -347,29 +535,37 @@ func main() {
         {/* Diagram Canvas */}
         <DiagramContainer>
           <ButtonContainer>
-          <SubmitButton onClick={handleGenerateCode}>
-              Save Plugin
+          <ExportButton onClick={() => window.exportModel()}>
+            Export Model
+            </ExportButton>
+          <SubmitButton onClick={handleGenerateCode} disabled={loading}>
+              {loading ? "Processing..." : "Save Plugin"}
             </SubmitButton>
           </ButtonContainer>
           <Diagram onExport={handleModelChange} model={model} />
           {/* Generate Go Code Button */}
-          <ButtonContainer>
-          <ExportButton onClick={() => window.exportModel()}>
-            Export Model
-            </ExportButton>
-          </ButtonContainer>
+          <TerminalContainer height={terminalHeight}>
+            <TerminalHeader>
+        <span>Execution Logs</span>
+        <ClearButton onClick={() => setTerminalLogs([])}>
+          Clear
+        </ClearButton>
+      </TerminalHeader>
+            <TerminalBodyContainer>
+            {terminalLogs.map((log, index) => (
+              <div key={index}>{log}</div>
+            ))}
+            </TerminalBodyContainer>
+          </TerminalContainer>
+          {/* <TerminalOutput logs={terminalLogs} setLogs={setTerminalLogs} /> */}
         </DiagramContainer>
-
-        {/* JSON Viewer */}
-        {/* <JSONViewerContainer>
-          <JSONViewer model={model} />
-        </JSONViewerContainer> */}
 
         {/* DSL Instructions */}
         <DSLContainer>
-          <DSLInstructions model={model} onUpdateModel={handleUpdateModel} />
+          <DSLInstructions model={model} onUpdateModel={handleUpdateModel} isUpdateWorkFlow ={true} logToTerminal={logToTerminal}  setInstructions={setInstructions} />
         </DSLContainer>
       </MainContainer>
+      <ToastContainer />
     </AppContainer>
   );
 };

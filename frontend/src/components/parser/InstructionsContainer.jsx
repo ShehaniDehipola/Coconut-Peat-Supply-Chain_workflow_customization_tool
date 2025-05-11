@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import styled from "styled-components";
 import { generateJSON } from "../../utils/jsonGenerator"; // Function to generate JSON from DSL
 import { generateDSL } from "../../utils/dslGenerator"; // Function to generate DSL from JSON
@@ -76,36 +76,75 @@ const TextArea = styled.textarea`
   min-height: 250px; /* Ensures a reasonable minimum height */
 `;
 
-const DSLInstructions = ({ model, onUpdateModel }) => {
+const DSLInstructions = ({ model, onUpdateModel, logToTerminal, isUpdateWorkFlow }) => {
   const [activeTab, setActiveTab] = useState("DSL Editor");
   const [instructions, setInstructions] = useState("");
   const [preview, setPreview] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [validatedModel, setValidatedModel] = useState(null);
+  
+  const hasValidated = useRef(false); 
 
-  // Generate DSL from the provided model when the component loads
-  React.useEffect(() => {
-    if (model) {
-      try {
-        const dsl = generateDSL(model); // Use the algorithm to generate DSL
-        setInstructions(dsl);
-        setPreview(dsl);
-      } catch (error) {
-        setInstructions(`Error: ${error.message}`);
-        setPreview(`Error: ${error.message}`);
-      }
+  useEffect(() => {
+    if (!model || hasValidated.current || isUpdateWorkFlow) return;
+
+    setIsProcessing(true); // Indicate that validation is in progress
+    logToTerminal("Starting validation process...");
+
+      generateDSL(model, logToTerminal, setInstructions)
+        .then((dsl) => {
+          logToTerminal("Validation complete. Preparing flowchart...");
+          setInstructions(dsl);
+          setPreview(dsl);
+          setValidatedModel(generateJSON(dsl)); // Store validated model
+        
+          setTimeout(() => {
+            setIsProcessing(false); // Mark processing as complete
+          }, 1000); // Small delay for better UX
+        })
+        .catch((error) => {
+          const errorMessage = `Error: ${error.message}`;
+          logToTerminal(errorMessage);
+          setInstructions(errorMessage);
+          setPreview(errorMessage);
+          setIsProcessing(false);
+        });
+
+  }, [model]); // Runs only when model changes
+
+  useEffect(() => {
+    if (!isProcessing && validatedModel && hasValidated.current) {
+      logToTerminal("Updating flowchart with validated model...");
+      onUpdateModel(validatedModel); // Only update once validation is done
     }
-  }, [model]);
+  }, [isProcessing, validatedModel, onUpdateModel]);
 
   // Handle updates to the instructions
-  const handleUpdate = () => {
-    try {
-      const updatedJSON = generateJSON(instructions); // Convert DSL to JSON
-      onUpdateModel(updatedJSON); // Pass the updated JSON back to the parent
-    } catch (error) {
-      const errorMessage = `Error: ${error.message}`;
-      setInstructions(errorMessage);
-      setPreview(errorMessage);
-    }
-  };
+  const handleUpdate = async () => {
+  logToTerminal("Validating DSL instructions before updating flowchart...");
+  setIsProcessing(true); // Show "Processing..." while running validation
+
+  try {
+    // First, validate the instructions by converting them into JSON
+    const updatedJSON = generateJSON(instructions); 
+
+    // Then, validate if JSON is correct by converting it back to DSL
+    const dslValidation = await generateDSL(updatedJSON, logToTerminal, setInstructions);
+
+    setTimeout(() => {
+      onUpdateModel(updatedJSON); // Only update if validation passes
+      setIsProcessing(false); // Reset processing status
+    }, 1000); // Small delay for a better user experience
+
+  } catch (error) {
+    const errorMessage = `Error: ${error.message}`;
+    logToTerminal(errorMessage);
+    setInstructions(errorMessage);
+    setPreview(errorMessage);
+    setIsProcessing(false); // Reset processing status on failure
+  }
+};
 
   return (
     <InstructionsContainer>
@@ -120,6 +159,9 @@ const DSLInstructions = ({ model, onUpdateModel }) => {
           Settings
         </Tab>
       </TabContainer>
+
+      {isProcessing && <div style={{ color: "blue" }}> Running Validations...</div>}
+      {errorMessage && <div style={{ color: "red" }}> {errorMessage}</div>}
 
       {/* Dynamic Content Based on Active Tab */}
       {activeTab === "DSL Editor" && (

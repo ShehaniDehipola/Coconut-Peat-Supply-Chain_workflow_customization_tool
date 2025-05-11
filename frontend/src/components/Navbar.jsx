@@ -10,6 +10,10 @@ const NavbarContainer = styled.div`
   background-color: #d89527;
   color: white;
   height: 50px;
+  position: fixed; /* Keeps it fixed */
+  top: 0; /* Sticks to the top */
+  width: 100%; /* Full width */
+  z-index: 1000; /* Ensures it stays on top */
 `;
 
 const Logo = styled.div`
@@ -22,12 +26,12 @@ const ProfileIcon = styled.div`
   display: flex;
   align-items: center;
   cursor: pointer;
+  margin-right: 40px;
 
   img {
     width: 35px;
     height: 35px;
     border-radius: 50%;
-    margin-left: 10px;
     background-color: #d3d2d0;
   }
 `;

@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import styled from "styled-components";
-import LoginImage from '../../assests/image-1.jpg'
+import LoginImage from '../../assests/image-1.jpg';
+import { useUser } from "../../context/UserContext"
 
 const Container = styled.div`
     display: flex;
@@ -10,7 +11,7 @@ const Container = styled.div`
     align-items: center;
     height: 100vh; /* Full viewport height */
     background-color: rgba(216, 149, 39, 0.3); 
-    margin: 0; /* Remove default margins */
+    margin-top: 0; /* Remove default margins */
     padding: 0; /* Remove default padding */
 `;
 
@@ -96,6 +97,7 @@ const Button = styled.button`
 
 const Login = () => {
     const navigate = useNavigate();
+    const { setUser } = useUser(); // Get setUser from context
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
 
@@ -103,8 +105,30 @@ const Login = () => {
         e.preventDefault();
         try {
             const res = await axios.post('http://localhost:5000/api/auth/login', { email, password });
-            console.log('User Logged In:', res.data);
-            navigate('/');
+            const token = res?.data?.token; // Extract token and user role
+            const { role, exporter_id, user_id } = res.data.user; // Extract role from response
+
+             console.log("User Data Received:", res.data.user);
+
+            if (token) {
+            localStorage.setItem("token", token); // Store token
+            localStorage.setItem("user", JSON.stringify(res.data.user)); // Store user details in localStorage
+        } else {
+            console.error("Login failed: No token received.");
+            alert("Login failed. Please try again.");
+            return;
+            }
+            
+            console.log("user's role is: ", role)
+            console.log("User's Exporter ID:", exporter_id);
+            console.log("User's User ID:", user_id);
+            setUser({ email, role, exporter_id, user_id }); // Store user details in context
+            if (role === "exporter") {
+                navigate("/exporter-dashboard"); // Redirect after login
+            }
+            if (role === "manufacturer") {
+                navigate("/manufacturer-dashboard"); // Redirect after login
+            }
         } catch (err) {
             console.error('Error logging in:', err.response.data.message);
         }
