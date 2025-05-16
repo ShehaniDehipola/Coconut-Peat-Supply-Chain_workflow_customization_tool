@@ -29,7 +29,7 @@ const Diagram = ({ onExport, model }) => {
     // Save the diagram instance in the ref
     diagramRef.current = diagram;
 
-    console.log("Diagram initialized:", diagramRef.current);
+    // console.log("Diagram initialized:", diagramRef.current);
 
     // Node Templates
     diagram.nodeTemplateMap.add(
@@ -230,16 +230,20 @@ const Diagram = ({ onExport, model }) => {
   // Transform `nodeDataArray` and `linkDataArray` for GoJS compatibility
   const formattedModel = {
     class: "GraphLinksModel",
-    nodeDataArray: model.nodes.map((node) => ({
-      key: node.id, // Unique identifier for each node
-      category: node.category || "", // Category to match a node template
-      text: node.text || "", // Text to display inside the node
-    })),
-    linkDataArray: model.links.map((link) => ({
-      from: link.from, // Key of the source node
-      to: link.to, // Key of the target node
-      text: link.text || "", // Optional link label
-    })),
+    nodeDataArray: model.nodes
+  .filter((node) => node && node.id !== undefined)
+  .map((node) => ({
+    key: node.id,
+    category: node.category || "",
+    text: node.text || "",
+  })),
+    linkDataArray: model.links
+  .filter((link) => link && link.from !== undefined && link.to !== undefined)
+  .map((link) => ({
+    from: link.from,
+    to: link.to,
+    text: link.text || link.condition || "",
+  })),
   };
 
   // Update the diagram with the transformed model
@@ -265,6 +269,8 @@ const Diagram = ({ onExport, model }) => {
     window.exportModel = exportModel;
 
     console.log("Export model function attached to window:", window.exportModel);
+
+    console.log("New model: ", model)
 
     return () => {
       diagram.div = null;

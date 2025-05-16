@@ -225,6 +225,8 @@ const AddNewPluginPage = () => {
   const [terminalLogs, setTerminalLogs] = useState([]);
   const [instructions, setInstructions] = useState("");
   const [loading, setLoading] = useState(false); // Loading state
+  const [progressiveModel, setProgressiveModel] = useState({ nodes: [], links: [] });
+  const [replayMode, setReplayMode] = useState(false);
   const navigate = useNavigate(); 
 
   // Fetch topics from API
@@ -248,12 +250,15 @@ const AddNewPluginPage = () => {
     return;
     }
     console.log("Model data received in handleModelChange:", modelData);
-    setModel(modelData);
+    
+    setModel(modelData)
+    handleGenerateDSL(modelData); 
   };
 
   const handleGenerateCode = async () => {
-    if (!model) {
-      alert("No flowchart model to generate code from!");
+    const modelToUse = model || progressiveModel;
+    if (!modelToUse) {
+      toast.error("No flowchart model to generate code from!");
       return;
     }
 
@@ -456,11 +461,12 @@ func main() {
     setTerminalLogs((prevLogs) => [...prevLogs, message]);
   };
 
-  const handleGenerateDSL = () => {
+  const handleGenerateDSL = async (modelToUse) => {
     setTerminalLogs(["Starting DSL validation..."]);
     try {
-      const result = generateDSL(model, logToTerminal, setInstructions);
+      const result = await generateDSL(modelToUse, logToTerminal, setInstructions);
       setTerminalLogs((prevLogs) => [...prevLogs, result]);
+      console.log("Instructions result: ", result)
     } catch (error) {
       setTerminalLogs((prevLogs) => [...prevLogs, `Error: ${error.message}`]);
     }
@@ -542,7 +548,7 @@ func main() {
               {loading ? "Processing..." : "Save Plugin"}
             </SubmitButton>
           </ButtonContainer>
-          <Diagram onExport={handleModelChange} model={model} />
+          <Diagram onExport={handleModelChange} model={replayMode ? progressiveModel : model} />
           {/* Generate Go Code Button */}
           <TerminalContainer height={terminalHeight}>
             <TerminalHeader>
@@ -562,7 +568,8 @@ func main() {
 
         {/* DSL Instructions */}
         <DSLContainer>
-          <DSLInstructions model={model} onUpdateModel={handleUpdateModel} isUpdateWorkFlow ={true} logToTerminal={logToTerminal}  setInstructions={setInstructions} />
+          <DSLInstructions model={progressiveModel} setProgressiveModel={setProgressiveModel} onUpdateModel={handleUpdateModel} isUpdateWorkFlow ={true} logToTerminal={logToTerminal}  setInstructions={setInstructions} instructions={instructions} replayMode={replayMode}
+  setReplayMode={setReplayMode} />
         </DSLContainer>
       </MainContainer>
       <ToastContainer />

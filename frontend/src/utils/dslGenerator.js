@@ -22,7 +22,7 @@ export function generateDSL(json, logCallback, setInstructions) {
         // Validation Step 2: Validate nodes
         logCallback(' Processing: Validating nodes...');
         const nodeKeys = new Set();
-        nodes.forEach((node) => {
+        nodes.filter(n => n !== null && n !== undefined).forEach((node) => {
           if (!node.key) throw new Error(`Node with missing 'key' found.`);
           if (nodeKeys.has(node.key))
             throw new Error(`Duplicate node key found: ${node.key}`);
@@ -237,5 +237,6 @@ export function generateDSL(json, logCallback, setInstructions) {
         }, 300); // Delay for node validation
       }, 200); // Delay for JSON structure validation
     }, 200); // Initial processing delay
+    console.log("JSON after the instructions: ", json)
   });
 }

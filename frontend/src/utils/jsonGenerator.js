@@ -1,40 +1,38 @@
 export function generateJSON(instructions) {
-  console.log('Input DSL Instructions:', instructions);
-
   const lines = instructions.split('\n');
-  const json = { nodes: [], links: [] };
+  const steps = [];
+  let lastNodeId = null;
+  let nodeId = 1;
+  let actionNodes = {};
 
-  let lastNode = null;
-  let decisionNode = null;
-  let yesNode = null;
-  let noNode = null;
-  let actionNodes = {}; // To track action nodes by label
-
-  lines.forEach((line, index) => {
+  lines.forEach((line) => {
     if (line.startsWith('Start the process')) {
-      json.nodes.push({
-        id: 1,
-        key: 1,
+      const node = {
+        id: nodeId,
+        key: nodeId,
         type: 'Start',
         category: 'Start',
         label: 'Start',
         text: 'Start',
-      });
-      lastNode = 1;
+      };
+      steps.push({ node, link: null });
+      lastNodeId = nodeId;
+      nodeId++;
     } else if (line.startsWith('Step')) {
       const label = line.match(/Step: (.+)/)[1];
-      const id = json.nodes.length + 1;
-      json.nodes.push({
-        id,
-        key: id,
+      const node = {
+        id: nodeId,
+        key: nodeId,
         type: 'Action',
         category: 'Process',
         label,
         text: label,
-      });
-      if (lastNode) json.links.push({ from: lastNode, to: id });
-      lastNode = id;
-      actionNodes[label] = id; // Store the action node with its label
+      };
+      const link = lastNodeId ? { from: lastNodeId, to: nodeId } : null;
+      steps.push({ node, link });
+      lastNodeId = nodeId;
+      actionNodes[label] = nodeId;
+      nodeId++;
     } else if (line.startsWith('Decision')) {
       let condition = line.match(/Decision: Is (.+)\?/)[1];
       condition = condition
@@ -44,103 +42,87 @@ export function generateJSON(instructions) {
         .replace(/less than/g, '<')
         .replace(/equal to/g, '==')
         .replace(/not equal to/g, '!=');
-      const id = json.nodes.length + 1;
-      json.nodes.push({
-        id,
-        key: id,
+      const node = {
+        id: nodeId,
+        key: nodeId,
         type: 'Decision',
         category: 'Decision',
         label: condition,
         text: condition,
-      });
-      if (lastNode) json.links.push({ from: lastNode, to: id });
-      decisionNode = id;
+      };
+      const link = lastNodeId ? { from: lastNodeId, to: nodeId } : null;
+      steps.push({ node, link });
+      lastNodeId = nodeId;
+      nodeId++;
     } else if (line.trim().startsWith('Yes ->')) {
       const label = line.match(/Yes -> (.+)/)[1];
-      const id = json.nodes.length + 1;
-      if (label === 'End the process') {
-        json.nodes.push({
-          id,
-          key: id,
-          type: 'End',
-          category: 'End',
-          label: 'End',
-          text: 'End',
-        });
-      } else {
-        json.nodes.push({
-          id,
-          key: id,
-          type: 'Action',
-          category: 'Process',
-          label,
-          text: label,
-        });
-      }
-      if (decisionNode)
-        json.links.push({ from: decisionNode, to: id, condition: 'Yes' });
-      yesNode = id;
-      if (label !== 'End the process') lastNode = id;
+      const isEnd = label === 'End the process';
+      const node = {
+        id: nodeId,
+        key: nodeId,
+        type: isEnd ? 'End' : 'Action',
+        category: isEnd ? 'End' : 'Process',
+        label: isEnd ? 'End' : label,
+        text: isEnd ? 'End' : label,
+      };
+      steps.push({ node, link: { from: lastNodeId, to: nodeId, condition: 'Yes' } });
+      if (!isEnd) lastNodeId = nodeId;
+      nodeId++;
     } else if (line.trim().startsWith('No ->')) {
       const label = line.match(/No -> (.+)/)[1];
-      let id;
-      if (label.startsWith('Repeat the')) {
-        const actionLabel = label.replace('Repeat the ', '').trim();
-        id = actionNodes[actionLabel];
-        if (!id) {
-          id = json.nodes.length + 1; // Generate a new ID if not found
-          json.nodes.push({
-            id,
-            key: id,
-            type: 'Action',
-            category: 'Process',
-            label: actionLabel,
-            text: actionLabel,
-          });
-          actionNodes[actionLabel] = id; // Store it in actionNodes
-        }
-      } else if (label === 'End the process') {
-        id = json.nodes.length + 1;
-        json.nodes.push({
-          id,
-          key: id,
-          type: 'End',
-          category: 'End',
-          label: 'End',
-          text: 'End',
-        });
-      } else {
-        id = actionNodes[label] || json.nodes.length + 1;
-        if (!actionNodes[label]) {
-          json.nodes.push({
-            id,
-            key: id,
-            type: 'Action',
-            category: 'Process',
-            label,
-            text: label,
-          });
-        }
-      }
-      if (decisionNode)
-        json.links.push({ from: decisionNode, to: id, condition: 'No' });
-      noNode = id;
-      if (label !== 'End the process' && !label.startsWith('Repeat the'))
-        lastNode = id;
+  let idToUse = nodeId;
+  let node = null;
+
+  if (label.startsWith('Repeat the')) {
+    const actionLabel = label.replace('Repeat the ', '').trim();
+    idToUse = actionNodes[actionLabel];
+
+    if (!idToUse) {
+      // Edge case: repeated node not found — define it just in case
+      node = {
+        id: nodeId,
+        key: nodeId,
+        type: 'Action',
+        category: 'Process',
+        label: actionLabel,
+        text: actionLabel,
+      };
+      actionNodes[actionLabel] = nodeId;
+      steps.push({ node, link: { from: lastNodeId, to: nodeId, condition: 'No' } });
+      lastNodeId = nodeId;
+      nodeId++;
+    } else {
+      // Repeat to an existing node — just push the link
+      steps.push({ node: null, link: { from: lastNodeId, to: idToUse, condition: 'No' } });
+    }
+
+  } else {
+    node = {
+      id: nodeId,
+      key: nodeId,
+      type: label === 'End the process' ? 'End' : 'Action',
+      category: label === 'End the process' ? 'End' : 'Process',
+      label: label === 'End the process' ? 'End' : label,
+      text: label === 'End the process' ? 'End' : label,
+    };
+    actionNodes[label] = nodeId;
+    steps.push({ node, link: { from: lastNodeId, to: nodeId, condition: 'No' } });
+    if (label !== 'End the process') lastNodeId = nodeId;
+    nodeId++;
+  }
     } else if (line.startsWith('End the process')) {
-      const id = json.nodes.length + 1;
-      json.nodes.push({
-        id,
-        key: id,
+      const node = {
+        id: nodeId,
+        key: nodeId,
         type: 'End',
         category: 'End',
         label: 'End',
         text: 'End',
-      });
-      if (lastNode) json.links.push({ from: lastNode, to: id });
+      };
+      steps.push({ node, link: { from: lastNodeId, to: nodeId } });
+      nodeId++;
     }
   });
 
-  console.log('Generated JSON:', JSON.stringify(json, null, 2));
-  return json;
+  return steps;
 }
