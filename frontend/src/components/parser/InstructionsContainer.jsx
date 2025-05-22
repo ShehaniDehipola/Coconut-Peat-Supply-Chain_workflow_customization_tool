@@ -144,9 +144,10 @@ const [progressiveIndex, setProgressiveIndex] = useState(0);
 
   const handleUpdate = async () => {
   logToTerminal("Validating DSL instructions before updating flowchart...");
+    console.log("Instructions: ", instructions)
   setIsProcessing(true);
 
-  console.log("Instructions: ", instructions)
+
   try {
     // Parse the instructions into steps
     const steps = generateJSON(instructions); // Returns [{ node, link }]

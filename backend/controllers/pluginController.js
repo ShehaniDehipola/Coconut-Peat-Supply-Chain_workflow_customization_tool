@@ -15,8 +15,8 @@ exports.savePlugin = async (req, res) => {
 
     if (!plugin_name || !nodes || !links) {
       return res
-        .status(400)
-        .json({ success: false, message: 'Missing required fields' });
+          .status(400)
+          .json({ success: false, message: 'Missing required fields' });
     }
 
     // Check if plugin already exists
@@ -24,15 +24,15 @@ exports.savePlugin = async (req, res) => {
 
     if (existingPlugin) {
       return res
-        .status(400)
-        .json({ success: false, message: 'Plugin already exists' });
+          .status(400)
+          .json({ success: false, message: 'Plugin already exists' });
     }
 
     const plugin = new NewPlugin({ plugin_name, nodes, links });
     await plugin.save();
     res
-      .status(201)
-      .json({ success: true, message: 'Plugin saved successfully' });
+        .status(201)
+        .json({ success: true, message: 'Plugin saved successfully' });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -47,8 +47,8 @@ exports.getPlugin = async (req, res) => {
 
     if (!plugin) {
       return res
-        .status(404)
-        .json({ success: false, message: 'Plugin not found' });
+          .status(404)
+          .json({ success: false, message: 'Plugin not found' });
     }
 
     res.json({ success: true, data: plugin });
@@ -71,40 +71,40 @@ const pluginProto = grpc.loadPackageDefinition(packageDefinition).plugin;
 
 // gRPC Client setup
 const client = new pluginProto.MainService(
-  '0.0.0.0:50051',
-  grpc.credentials.createInsecure()
+    'localhost:30001',
+    grpc.credentials.createInsecure()
 );
 
 const newPluginClient = new pluginProto.NewPluginService(
-  '0.0.0.0:50051',
-  grpc.credentials.createInsecure()
+    'localhost:30001',
+    grpc.credentials.createInsecure()
 );
 
 exports.grpcFun = async (req, res) => {
-  const { workflow_id, plugin_name, userRequirement, action } = req.body;
+  const { plugin_name,workflow_id,userRequirement, action } = req.body;
 
   if (!workflow_id || !plugin_name || !userRequirement || !action) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
 
   // Simulate a successful response
-  return res.json({
-    message: 'Plugin registered successfully!',
-    workflow_id,
-    plugin_name,
-    userRequirement,
-    action,
-  });
-
-  // client.ClientFunction(
-  //   { workflow_id, plugin_name, userRequirement, action },
-  //   (error, response) => {
-  //     if (error) {
-  //       return res.status(500).json({ error: error.message });
-  //     }
-  //     res.json(response);
-  //   }
-  // );
+  // return res.json({
+  //   message: 'Plugin registered successfully!',
+  //   workflow_id,
+  //   plugin_name,
+  //   userRequirement,
+  //   action,
+  // });
+  console.log("plugin_name",plugin_name)
+  client.ClientFunction(
+      { plugin_name, workflow_id, userRequirement, action },
+      (error, response) => {
+        if (error) {
+          return res.status(500).json({ error: error.message });
+        }
+        res.json(response);
+      }
+  );
 };
 
 exports.processAll = async (req, res) => {
@@ -124,52 +124,42 @@ exports.processAll = async (req, res) => {
 
     // Step 2: Generate the second file
     const folderPath = await generateFile(
-      goFileContent,
-      plugin_name,
-      sensor_name,
-      userRequirement,
-      execute_logic,
-      save_path
+        goFileContent,
+        plugin_name,
+        sensor_name,
+        userRequirement,
+        execute_logic,
+        save_path
     );
 
     // Step 3: Zip the folder
     const pluginFolderPath = path.resolve('../', 'washing'); // Replace with your folder path
     const outputZipPath = path.resolve('../', 'washing.zip'); // Replace with your desired output path
 
-    zipFolder(pluginFolderPath, outputZipPath)
-      .then(() => {
-        console.log('Folder successfully zipped!');
-        // path to the file  to upload
-        uploadFile('../washing.zip');
-        // Step 4: Upload the zipped folder via gRPC
-        const zipFileData = fs.readFileSync(outputZipPath);
-        const grpcRequest = {
-          filename: 'washing.zip',
-          filedata: zipFileData,
-        };
-
-        client.UploadFile(grpcRequest, (err, response) => {
-          if (err) {
-            console.error('Error uploading file via gRPC:', err);
-            return res
-              .status(500)
-              .json({ message: 'Error uploading file via gRPC', error: err });
-          }
-
-          res.status(200).json({
-            message: 'All steps completed successfully!',
-            update: 'File updated successfully',
-            generate: 'File generated successfully',
-            zipUpload: response.message,
+    await zipFolder(pluginFolderPath, outputZipPath);
+    await new Promise((resolve, reject) => {
+      uploadFile(outputZipPath)
+          .then(() => {
+            res.status(201).json({
+              message: 'New Plugin created and uploaded successfully!',
+            });
+            resolve();
+          })
+          .catch((err) => {
+            console.error('Error uploading file:', err);
+            res.status(500).json({
+              message: 'Plugin created but upload failed',
+              error: err.message
+            });
+            reject(err);
           });
-        });
-      })
-      .catch((err) => console.error('Error zipping folder:', err));
+    });
+
   } catch (err) {
     console.error('Error processing all steps:', err);
     res
-      .status(500)
-      .json({ message: 'Error processing all steps', error: err.message });
+        .status(500)
+        .json({ message: 'Error processing all steps', error: err.message });
   }
 };
 
@@ -192,21 +182,28 @@ function zipFolder(folderPath, outputZipPath) {
     archive.pipe(output);
 
     // Append the folder to the archive
-    archive.directory(folderPath, false); // `false` prevents nesting in a subfolder
+    archive.directory(folderPath, path.basename(folderPath));
 
     // Finalize the archive
     archive.finalize();
   });
 }
 
-function uploadFile(filePath) {
+// Upload file method
+async function uploadFile(filePath) {
   try {
-    const filename = filePath.split('/').pop();
+    const filename = path.basename(filePath); // safer
+    if (!filename) {
+      console.error('Filename could not be determined from path:', filePath);
+      return;
+    }
+
     const fileData = fs.readFileSync(filePath);
+    console.log('File name:', filename);
 
     const request = {
-      filename: filename,
-      filedata: fileData,
+      fileName: filename,
+      fileData: fileData,
     };
 
     newPluginClient.NewPluginCreate(request, (err, response) => {
