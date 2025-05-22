@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom"; 
+import { useNavigate } from "react-router-dom";
 import styled, { keyframes }  from "styled-components";
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -225,7 +225,9 @@ const AddNewPluginPage = () => {
   const [terminalLogs, setTerminalLogs] = useState([]);
   const [instructions, setInstructions] = useState("");
   const [loading, setLoading] = useState(false); // Loading state
-  const navigate = useNavigate(); 
+  const [progressiveModel, setProgressiveModel] = useState({ nodes: [], links: [] });
+  const [replayMode, setReplayMode] = useState(false);
+  const navigate = useNavigate();
 
   // Fetch topics from API
   useEffect(() => {
@@ -248,18 +250,21 @@ const AddNewPluginPage = () => {
     return;
     }
     console.log("Model data received in handleModelChange:", modelData);
-    setModel(modelData);
+
+    // setModel(modelData)
+    handleGenerateDSL(modelData);
   };
 
   const handleGenerateCode = async () => {
-    if (!model) {
-      alert("No flowchart model to generate code from!");
+    const modelToUse = model || progressiveModel;
+    if (!modelToUse) {
+      toast.error("No flowchart model to generate code from!");
       return;
     }
 
     try {
       setLoading(true); // Start loading animation
-      const goCode = generateGoCode(model); // Call generateGoCode with the model
+      const goCode = generateGoCode(modelToUse); // Call generateGoCode with the model
       console.log("Generated Go Code:\n", goCode);
       toast.success("Go code generated successfully!");
     } catch (error) {
@@ -316,7 +321,7 @@ EXPOSE 50054
 
 # Command to run the executable
 CMD ["./washing_plugin"]`
-    
+
 
     const goFileContent = `
 package main
@@ -415,10 +420,10 @@ func main() {
     "execute_logic": execute_logic,
     "save_path": "../washing",
   };
-    
+
     try {
       const response = await axios.post("http://localhost:5000/api/file/process-all", requestBody,
-        
+
         {
           headers: {
             "Content-Type": "application/json",
@@ -451,16 +456,17 @@ func main() {
   useEffect(() => {
   console.log("Current model state:", model);
   }, [model]);
-  
+
   const logToTerminal = (message) => {
     setTerminalLogs((prevLogs) => [...prevLogs, message]);
   };
 
-  const handleGenerateDSL = () => {
+  const handleGenerateDSL = async (modelToUse) => {
     setTerminalLogs(["Starting DSL validation..."]);
     try {
-      const result = generateDSL(model, logToTerminal, setInstructions);
+      const result = await generateDSL(modelToUse, logToTerminal, setInstructions);
       setTerminalLogs((prevLogs) => [...prevLogs, result]);
+      console.log("Instructions result: ", result)
     } catch (error) {
       setTerminalLogs((prevLogs) => [...prevLogs, `Error: ${error.message}`]);
     }
@@ -542,7 +548,7 @@ func main() {
               {loading ? "Processing..." : "Save Plugin"}
             </SubmitButton>
           </ButtonContainer>
-          <Diagram onExport={handleModelChange} model={model} />
+          <Diagram onExport={handleModelChange} model={replayMode ? progressiveModel : model} />
           {/* Generate Go Code Button */}
           <TerminalContainer height={terminalHeight}>
             <TerminalHeader>
@@ -562,7 +568,8 @@ func main() {
 
         {/* DSL Instructions */}
         <DSLContainer>
-          <DSLInstructions model={model} onUpdateModel={handleUpdateModel} isUpdateWorkFlow ={true} logToTerminal={logToTerminal}  setInstructions={setInstructions} />
+          <DSLInstructions model={progressiveModel} setProgressiveModel={setProgressiveModel} onUpdateModel={handleUpdateModel} isUpdateWorkFlow ={true} logToTerminal={logToTerminal}  setInstructions={setInstructions} instructions={instructions} replayMode={replayMode}
+  setReplayMode={setReplayMode} />
         </DSLContainer>
       </MainContainer>
       <ToastContainer />

@@ -76,17 +76,21 @@ const TextArea = styled.textarea`
   min-height: 250px; /* Ensures a reasonable minimum height */
 `;
 
-const DSLInstructions = ({ model, onUpdateModel, logToTerminal, isUpdateWorkFlow }) => {
+const DSLInstructions = ({ model, setProgressiveModel, onUpdateModel, logToTerminal, isUpdateWorkFlow, instructions, setInstructions,setReplayMode }) => {
   const [activeTab, setActiveTab] = useState("DSL Editor");
-  const [instructions, setInstructions] = useState("");
   const [preview, setPreview] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
   const [validatedModel, setValidatedModel] = useState(null);
+
+  const [progressiveSteps, setProgressiveSteps] = useState([]);
+const [progressiveIndex, setProgressiveIndex] = useState(0);
+
   
   const hasValidated = useRef(false); 
 
   useEffect(() => {
+    console.log('YESSSSSSSSSSSSSSSSSSSSSSSSSSSSS')
     if (!model || hasValidated.current || isUpdateWorkFlow) return;
 
     setIsProcessing(true); // Indicate that validation is in progress
@@ -97,7 +101,7 @@ const DSLInstructions = ({ model, onUpdateModel, logToTerminal, isUpdateWorkFlow
           logToTerminal("Validation complete. Preparing flowchart...");
           setInstructions(dsl);
           setPreview(dsl);
-          setValidatedModel(generateJSON(dsl)); // Store validated model
+          // setValidatedModel(generateJSON(dsl)); // Store validated model
         
           setTimeout(() => {
             setIsProcessing(false); // Mark processing as complete
@@ -114,37 +118,113 @@ const DSLInstructions = ({ model, onUpdateModel, logToTerminal, isUpdateWorkFlow
   }, [model]); // Runs only when model changes
 
   useEffect(() => {
+  if (progressiveSteps.length > 0 && progressiveIndex < progressiveSteps.length) {
+    const timer = setTimeout(() => {
+      const { node, link } = progressiveSteps[progressiveIndex];
+
+      setProgressiveModel(prev => ({
+        nodes: [...prev.nodes, node],
+        links: link ? [...prev.links, link] : [...prev.links],
+      }));
+
+      setProgressiveIndex(prev => prev + 1);
+    }, 500); // auto-step every 500ms
+
+    return () => clearTimeout(timer); // Clean up on unmount/update
+  }
+}, [progressiveIndex, progressiveSteps]);
+
+
+  useEffect(() => {
     if (!isProcessing && validatedModel && hasValidated.current) {
       logToTerminal("Updating flowchart with validated model...");
       onUpdateModel(validatedModel); // Only update once validation is done
     }
   }, [isProcessing, validatedModel, onUpdateModel]);
 
-  // Handle updates to the instructions
   const handleUpdate = async () => {
   logToTerminal("Validating DSL instructions before updating flowchart...");
-  setIsProcessing(true); // Show "Processing..." while running validation
+    console.log("Instructions: ", instructions)
+  setIsProcessing(true);
+
 
   try {
-    // First, validate the instructions by converting them into JSON
-    const updatedJSON = generateJSON(instructions); 
+    // Parse the instructions into steps
+    const steps = generateJSON(instructions); // Returns [{ node, link }]
+    setProgressiveSteps(steps);
+    setProgressiveModel({ nodes: [], links: [] });
+    setProgressiveIndex(0);
+    setReplayMode(true);
 
-    // Then, validate if JSON is correct by converting it back to DSL
-    const dslValidation = await generateDSL(updatedJSON, logToTerminal, setInstructions);
+    // Filter null nodes before validating
+    const modelForValidation = {
+      nodes: steps.map(s => s.node).filter(Boolean),
+      links: steps.map(s => s.link).filter(Boolean),
+    };
+    // // Optionally validate DSL again
+    // await generateDSL({ nodes: steps.map(s => s.node), links: steps.map(s => s.link).filter(Boolean) }, logToTerminal, setInstructions);
 
-    setTimeout(() => {
-      onUpdateModel(updatedJSON); // Only update if validation passes
-      setIsProcessing(false); // Reset processing status
-    }, 1000); // Small delay for a better user experience
+    // logToTerminal("Auto-play: flowchart will build step-by-step.");
+    // setIsProcessing(false);
 
+    await generateDSL(modelForValidation, logToTerminal, setInstructions);
+    logToTerminal(" DSL instructions are valid.");
   } catch (error) {
     const errorMessage = `Error: ${error.message}`;
     logToTerminal(errorMessage);
     setInstructions(errorMessage);
     setPreview(errorMessage);
-    setIsProcessing(false); // Reset processing status on failure
   }
+  setIsProcessing(false);
 };
+
+  // Handle updates to the instructions
+  // const handleUpdate = async () => {
+  // logToTerminal("Validating DSL instructions before updating flowchart...");
+  // setIsProcessing(true); // Show "Processing..." while running validation
+
+  // try {
+    // First, validate the instructions by converting them into JSON
+    // const updatedJSON = generateJSON(instructions); 
+
+    // // Then, validate if JSON is correct by converting it back to DSL
+    // const dslValidation = await generateDSL(updatedJSON, logToTerminal, setInstructions);
+
+    // setTimeout(() => {
+    //   onUpdateModel(updatedJSON); // Only update if validation passes
+    //   setIsProcessing(false); // Reset processing status
+    // }, 1000); // Small delay for a better user experience
+
+//     const steps = generateJSON(instructions); // <-- now returns [{ node, link }]
+//   setProgressiveSteps(steps);
+//   setProgressiveModel({ nodes: [], links: [] });
+//   setProgressiveIndex(0);
+//   logToTerminal("Progressive model initialized. Click 'Next Step' to build flowchart.");
+//   setIsProcessing(false);
+
+//   } catch (error) {
+//     const errorMessage = `Error: ${error.message}`;
+//     logToTerminal(errorMessage);
+//     setInstructions(errorMessage);
+//     setPreview(errorMessage);
+//     setIsProcessing(false); // Reset processing status on failure
+//   }
+// };
+
+// const handleNextStep = () => {
+//   if (progressiveIndex < progressiveSteps.length) {
+//     const { node, link } = progressiveSteps[progressiveIndex];
+
+//     setProgressiveModel(prev => ({
+
+//       nodes: [...prev.nodes, node],
+//       links: link ? [...prev.links, link] : [...prev.links]
+//     }));
+
+//     setProgressiveIndex(prev => prev + 1);
+//   }
+// };
+
 
   return (
     <InstructionsContainer>
@@ -177,6 +257,15 @@ const DSLInstructions = ({ model, onUpdateModel, logToTerminal, isUpdateWorkFlow
             <UpdateButton onClick={handleUpdate}>Update Workflow</UpdateButton>
         </div>
       )}
+
+      {/* <UpdateButton
+  onClick={handleNextStep}
+  disabled={progressiveIndex >= progressiveSteps.length}
+>
+  Next Step
+</UpdateButton> */}
+
+
 
       {activeTab === "Preview" && (
         <div>
