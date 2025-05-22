@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import styled, { keyframes }  from "styled-components";
-import { ToastContainer, toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
-import axios from 'axios';
+import styled, { keyframes } from "styled-components";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import axios from "axios";
 import JSONViewer from "./parser/JsonViewer";
 import DSLInstructions from "./parser/InstructionsContainer";
 import Diagram from "./Diagram";
@@ -65,7 +65,7 @@ const Label = styled.label`
 
 const PaletteContainer = styled.div`
   flex: 1;
-  border-top: 1px solid #2D3142;
+  border-top: 1px solid #2d3142;
 `;
 
 const DiagramContainer = styled.div`
@@ -78,7 +78,7 @@ const DiagramContainer = styled.div`
 
 const JSONViewerContainer = styled.div`
   width: 250px;
-  border-left: 1px solid #2D3142;
+  border-left: 1px solid #2d3142;
   height: 100%;
 `;
 
@@ -92,9 +92,9 @@ const DSLContainer = styled.div`
 const TerminalContainer = styled.div`
   width: 100%;
   height: 200px;
-  background-color: #2D3142;
+  background-color: #2d3142;
   color: white;
-  border-top: 1px solid #2D3142;
+  border-top: 1px solid #2d3142;
   position: relative;
   flex-shrink: 0;
 `;
@@ -103,7 +103,7 @@ const TerminalHeader = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background-color: #1F2532;
+  background-color: #1f2532;
   padding: 8px 12px;
   color: white;
   font-weight: semi-bold;
@@ -133,16 +133,15 @@ const ClearButton = styled.button`
 const TerminalBodyContainer = styled.div`
   width: 100%;
   height: 200px;
-  background-color: #2D3142;
+  background-color: #2d3142;
   color: white;
   font-family: monospace;
   padding: 10px;
   overflow-y: auto;
-  border-top: 1px solid #2D3142;
+  border-top: 1px solid #2d3142;
   position: relative;
   flex-shrink: 0;
 `;
-
 
 const ResizeHandle = styled.div`
   height: 5px;
@@ -155,34 +154,34 @@ const ResizeHandle = styled.div`
 
 const ExportButton = styled.button`
   background-color: transparent;
-  color: #2D3142;
-  border: 1px solid #2D3142;
+  color: #2d3142;
+  border: 1px solid #2d3142;
   padding: 10px 15px;
   font-size: 12px;
   border-radius: 5px;
   cursor: pointer;
   margin: 10px 0;
-transition: background-color 0.3s, color 0.3s;
+  transition: background-color 0.3s, color 0.3s;
 
   &:hover {
-    background-color: #2D3142;
+    background-color: #2d3142;
     color: white;
   }
 `;
 
 const SubmitButton = styled.button`
-  background-color: #2D3142;
+  background-color: #2d3142;
   color: white;
-  border: 1px solid #2D3142;
+  border: 1px solid #2d3142;
   padding: 10px 15px;
   font-size: 12px;
   border-radius: 5px;
   cursor: pointer;
   margin: 10px 0;
-transition: background-color 0.3s, color 0.3s;
+  transition: background-color 0.3s, color 0.3s;
 
   &:hover {
-    background-color: #2D3142;
+    background-color: #2d3142;
     color: white;
   }
 `;
@@ -225,7 +224,10 @@ const AddNewPluginPage = () => {
   const [terminalLogs, setTerminalLogs] = useState([]);
   const [instructions, setInstructions] = useState("");
   const [loading, setLoading] = useState(false); // Loading state
-  const [progressiveModel, setProgressiveModel] = useState({ nodes: [], links: [] });
+  const [progressiveModel, setProgressiveModel] = useState({
+    nodes: [],
+    links: [],
+  });
   const [replayMode, setReplayMode] = useState(false);
   const navigate = useNavigate();
 
@@ -247,7 +249,7 @@ const AddNewPluginPage = () => {
   const handleModelChange = (modelData) => {
     if (!modelData) {
       console.error("Model data is missing.");
-    return;
+      return;
     }
     console.log("Model data received in handleModelChange:", modelData);
 
@@ -320,8 +322,7 @@ RUN chmod +x washing_plugin
 EXPOSE 50054
 
 # Command to run the executable
-CMD ["./washing_plugin"]`
-
+CMD ["./washing_plugin"]`;
 
     const goFileContent = `
 package main
@@ -330,9 +331,9 @@ import (
     "context"
     "log"
     "net"
-    "strconv"
     "time"
-
+    "fmt"
+    sensor "grading/config/sensor"
     mongo "grading/config/db"
     "grading/proto"
 
@@ -341,45 +342,104 @@ import (
 )
 
 type ${pluginName}PluginServer struct {
-    proto.UnimplementedGradingPluginServer
+    proto.UnimplementedPluginServer
+}
+
+// create the plugin in MongoDB
+func storePluginDetails() error {
+	collection := mongo.MongoClient.Database("test").Collection("plugins")
+	steps := []string{
+		"Unload all husk batch",
+		"Starting the grading sensor",
+		"Grading the husk based the color using the sensor",
+		"Sorting the husk based on the color (qualified, acceptable, rejected)",
+		"Counting the total usable husk (qualified + acceptable)",
+		"Checking if the total usable husk is equal to the user requirement",
+		"if the total usable husk is less than the user requirement, order another batch or decide to process",
+	}
+	pluginDetails := bson.M{
+		"plugin_name":     "${pluginName}",
+		"senosor_name":    "${sensorName}",
+		"userRequirement": "",
+		"workflow_id":     "null",
+		"status":          true,
+		"process":         "not",
+		"steps":           steps,
+		"created_at":      time.Now(),
+		"updated_at":      time.Now(),
+	}
+	// Insert the new plugin details
+	var err error
+	_, err = collection.InsertOne(context.Background(), pluginDetails)
+	if err != nil {
+		return fmt.Errorf("error storing plugin details: %v", err)
+	}
+
+	log.Println("Plugin details stored successfully")
+	return nil
 }
 
 // Register registers the plugin in MongoDB
 func (s *${pluginName}PluginServer) RegisterPlugin(ctx context.Context, req *proto.PluginRequest) (*proto.PluginResponse, error) {
-    collection := mongo.MongoClient.Database("pluginDB").Collection("plugins")
-    filter := bson.M{"plugin_name": req.PluginName}
+    collection := mongo.MongoClient.Database("test").Collection("plugins")
+    
+    // Check if the plugin is already registered
+    filter := bson.M{"plugin_name": req.PluginName, "workflow_id":"null"}
     var existingPlugin bson.M
     err := collection.FindOne(ctx, filter).Decode(&existingPlugin)
     if err == nil {
-        return &proto.PluginResponse{Success: false, Message: "Plugin is already registered"}, nil
-    }
-    plugin := bson.M{
-        "plugin_name":     req.PluginName,
-        "sensor_name":     "${sensorName}",
-        "userRequirement": userRequirement,
-        "status":          true,
-        "process":         "registered",
-        "created_at":      time.Now(),
-        "updated_at":      time.Now(),
-    }
+     // If not, register the plugin
+      update := bson.M{
+        "$set": bson.M{
+          "userRequirement": req.UserRequirement,
+          "workflow_id"    : req.WorkflowId,
+          "process":         "registered",
+          "updated_at":      time.Now(),
+        }, 
+      }
 
-    _, err = collection.InsertOne(ctx, plugin)
-    if err != nil {
-        log.Printf("Failed to register plugin: %v", err)
-        return &proto.PluginResponse{Success: false, Message: "Failed to register plugin"}, err
+       _, err = collection.UpdateOne(ctx, filter, update)
+      if err != nil {
+			  log.Printf("Failed to update plugin: %v", err)
+			  return &proto.PluginResponse{Success: false, Message: "Failed to update existing plugin"}, err
+		  }
+		    return &proto.PluginResponse{Success: true, Message: "Existing plugin updated successfully"}, nil
     }
-
+        err = storePluginDetails()
+	if err != nil {
+		log.Printf("Failed to create new plugin: %v", err)
+		return &proto.PluginResponse{Success: false, Message: "Failed to create new plugin"}, err
+	}
+    	// Now, update the newly created plugin with the workflow details
+	newFilter := bson.M{"plugin_name": req.PluginName, "workflow_id": "null"}
+	update := bson.M{
+		"$set": bson.M{
+			"userRequirement": req.UserRequirement,
+			"workflow_id":     req.WorkflowId,
+			"process":         "registered",
+			"updated_at":      time.Now(),
+		},
+	}
+    _, err = collection.UpdateOne(ctx, newFilter, update)
+	if err != nil {
+		log.Printf("Failed to update new plugin: %v", err)
+		return &proto.PluginResponse{Success: false, Message: "Failed to update new plugin"}, err
+	}
     return &proto.PluginResponse{Success: true, Message: "Plugin registered successfully"}, nil
 }
 
 // ExecutePlugin executes the plugin logic
 func (s *${pluginName}PluginServer) ExecutePlugin(ctx context.Context, req *proto.PluginExecute) (*proto.ExecutionStatus, error) {
     ${execute_logic}
+        return &proto.ExecutionStatus{
+        Success: true,
+        Message: "Plugin executed successfully",
+    }, nil
 }
 
 // UnregisterPlugin deactivates the plugin
 func (s *${pluginName}PluginServer) UnregisterPlugin(ctx context.Context, req *proto.PluginUnregister) (*proto.UnregisterResponse, error) {
-    collection := mongo.MongoClient.Database("pluginDB").Collection("plugins")
+    collection := mongo.MongoClient.Database("test").Collection("plugins")
     filter := bson.M{"plugin_name": req.PluginName}
     update := bson.M{
         "$set": bson.M{
@@ -397,38 +457,43 @@ func (s *${pluginName}PluginServer) UnregisterPlugin(ctx context.Context, req *p
 }
 
 func main() {
-    lis, err := net.Listen("tcp", ":50052")
+    lis, err := net.Listen("tcp", ":50054")
     if err != nil {
         log.Fatalf("failed to listen: %v", err)
     }
     grpcServer := grpc.NewServer()
     mongo.ConnectMongoDB()
-    proto.RegisterGradingPluginServer(grpcServer, &${pluginName}PluginServer{})
+    proto.RegisterPluginServer(grpcServer, &${pluginName}PluginServer{})
+    storePluginDetails()
+    go sensor.StartSensorSubscriber() //sensor connection
 
-    log.Println("gRPC server is running on port 50052")
+    log.Println("gRPC server is running on port 50054")
     if err := grpcServer.Serve(lis); err != nil {
         log.Fatalf("Failed to serve: %v", err)
     }
 }
-`
+`;
     const requestBody = {
-    "updateContent": updateContent,
-    "goFileContent": goFileContent,
-    "plugin_name": pluginName,
-    "sensor_name": sensorName,
-    "userRequirement": "100",
-    "execute_logic": execute_logic,
-    "save_path": "../washing",
-  };
+      updateContent: updateContent,
+      goFileContent: goFileContent,
+      plugin_name: pluginName,
+      sensor_name: sensorName,
+      userRequirement: "100",
+      execute_logic: execute_logic,
+      save_path: "../washing",
+    };
 
     try {
-      const response = await axios.post("http://localhost:5000/api/file/process-all", requestBody,
+      const response = await axios.post(
+        "http://localhost:5000/api/file/process-all",
+        requestBody,
 
         {
           headers: {
             "Content-Type": "application/json",
           },
-        });
+        }
+      );
       toast.success(response.data.message);
 
       setTimeout(() => {
@@ -439,22 +504,23 @@ func main() {
       console.error(error);
       toast.error("Failed to update the file.");
       if (error.response && error.response.data) {
-      console.log(`Failed to update the file: ${error.response.data.message}`);
-    } else {
+        console.log(
+          `Failed to update the file: ${error.response.data.message}`
+        );
+      } else {
         console.log("Failed to update the file. Please try again later.");
         setLoading(false);
+      }
     }
-    }
-
   };
 
   const handleUpdateModel = (updatedModel) => {
-    console.log("updated model", model)
+    console.log("updated model", model);
     setModel(updatedModel); // Update the model state
   };
 
   useEffect(() => {
-  console.log("Current model state:", model);
+    console.log("Current model state:", model);
   }, [model]);
 
   const logToTerminal = (message) => {
@@ -464,9 +530,13 @@ func main() {
   const handleGenerateDSL = async (modelToUse) => {
     setTerminalLogs(["Starting DSL validation..."]);
     try {
-      const result = await generateDSL(modelToUse, logToTerminal, setInstructions);
+      const result = await generateDSL(
+        modelToUse,
+        logToTerminal,
+        setInstructions
+      );
       setTerminalLogs((prevLogs) => [...prevLogs, result]);
-      console.log("Instructions result: ", result)
+      console.log("Instructions result: ", result);
     } catch (error) {
       setTerminalLogs((prevLogs) => [...prevLogs, `Error: ${error.message}`]);
     }
@@ -480,7 +550,10 @@ func main() {
     const startHeight = terminalHeight;
 
     const onMouseMove = (event) => {
-      const newHeight = Math.max(50, Math.min(250, startHeight + (startY - event.clientY)));
+      const newHeight = Math.max(
+        50,
+        Math.min(250, startHeight + (startY - event.clientY))
+      );
       setTerminalHeight(newHeight);
     };
 
@@ -524,7 +597,7 @@ func main() {
                 padding: "5px",
                 fontSize: "14px",
                 marginBottom: "10px",
-                boxSizing: "border-box"
+                boxSizing: "border-box",
               }}
             >
               <option value="">Select a sensor topic</option>
@@ -541,26 +614,29 @@ func main() {
         {/* Diagram Canvas */}
         <DiagramContainer>
           <ButtonContainer>
-          <ExportButton onClick={() => window.exportModel()}>
-            Export Model
+            <ExportButton onClick={() => window.exportModel()}>
+              Export Model
             </ExportButton>
-          <SubmitButton onClick={handleGenerateCode} disabled={loading}>
+            <SubmitButton onClick={handleGenerateCode} disabled={loading}>
               {loading ? "Processing..." : "Save Plugin"}
             </SubmitButton>
           </ButtonContainer>
-          <Diagram onExport={handleModelChange} model={replayMode ? progressiveModel : model} />
+          <Diagram
+            onExport={handleModelChange}
+            model={replayMode ? progressiveModel : model}
+          />
           {/* Generate Go Code Button */}
           <TerminalContainer height={terminalHeight}>
             <TerminalHeader>
-        <span>Execution Logs</span>
-        <ClearButton onClick={() => setTerminalLogs([])}>
-          Clear
-        </ClearButton>
-      </TerminalHeader>
+              <span>Execution Logs</span>
+              <ClearButton onClick={() => setTerminalLogs([])}>
+                Clear
+              </ClearButton>
+            </TerminalHeader>
             <TerminalBodyContainer>
-            {terminalLogs.map((log, index) => (
-              <div key={index}>{log}</div>
-            ))}
+              {terminalLogs.map((log, index) => (
+                <div key={index}>{log}</div>
+              ))}
             </TerminalBodyContainer>
           </TerminalContainer>
           {/* <TerminalOutput logs={terminalLogs} setLogs={setTerminalLogs} /> */}
@@ -568,8 +644,17 @@ func main() {
 
         {/* DSL Instructions */}
         <DSLContainer>
-          <DSLInstructions model={progressiveModel} setProgressiveModel={setProgressiveModel} onUpdateModel={handleUpdateModel} isUpdateWorkFlow ={true} logToTerminal={logToTerminal}  setInstructions={setInstructions} instructions={instructions} replayMode={replayMode}
-  setReplayMode={setReplayMode} />
+          <DSLInstructions
+            model={progressiveModel}
+            setProgressiveModel={setProgressiveModel}
+            onUpdateModel={handleUpdateModel}
+            isUpdateWorkFlow={true}
+            logToTerminal={logToTerminal}
+            setInstructions={setInstructions}
+            instructions={instructions}
+            replayMode={replayMode}
+            setReplayMode={setReplayMode}
+          />
         </DSLContainer>
       </MainContainer>
       <ToastContainer />

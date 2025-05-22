@@ -1,0 +1,43 @@
+syntax = "proto3";
+
+package plugin;
+
+option go_package = "/proto";
+
+service Plugin {
+  rpc RegisterPlugin (PluginRequest) returns (PluginResponse);
+  rpc ExecutePlugin (PluginExecute) returns (ExecutionStatus);
+  rpc UnregisterPlugin (PluginUnregister) returns (UnregisterResponse);
+}
+
+message PluginRequest {
+  string plugin_name = 1;
+  string workflow_id = 2;
+  string userRequirement = 3;
+}
+
+message PluginResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message PluginExecute{
+  string plugin_name = 1;
+  string workflow_id = 2;
+}
+
+message ExecutionStatus {
+  bool success = 1;
+  string message = 2;
+  map<string,string> results =3;
+}
+
+message PluginUnregister{
+  string plugin_name = 1;
+  string workflow_id = 2;
+}
+
+message UnregisterResponse{
+  bool success = 1;
+  string message = 2;
+}
