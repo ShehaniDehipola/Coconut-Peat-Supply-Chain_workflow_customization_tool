@@ -2,6 +2,10 @@ const mongoose = require('mongoose');
 const { v4: uuidv4 } = require('uuid');
 
 const workflowSchema = new mongoose.Schema({
+  workflow_name: {
+    type: String,
+    required: true,
+  },
   workflow_id: {
     type: String,
     required: true,

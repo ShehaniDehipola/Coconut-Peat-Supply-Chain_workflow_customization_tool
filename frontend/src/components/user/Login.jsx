@@ -122,7 +122,7 @@ const Login = () => {
             console.log("user's role is: ", role)
             console.log("User's Exporter ID:", exporter_id);
             console.log("User's User ID:", user_id);
-            setUser({ email, role, exporter_id, user_id }); // Store user details in context
+            setUser({ email, role, exporter_id, user_id, token }); // Store user details in context
             if (role === "exporter") {
                 navigate("/exporter-dashboard"); // Redirect after login
             }

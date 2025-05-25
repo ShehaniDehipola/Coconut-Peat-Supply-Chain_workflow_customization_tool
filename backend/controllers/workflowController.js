@@ -10,7 +10,7 @@ const {
 // create a workflow
 exports.createWorkflow = async (req, res) => {
   try {
-    const { workflow_id, exporter_id, manufacturer_id, expected_date, steps } =
+    const { workflow_name, workflow_id, exporter_id, manufacturer_id, expected_date, steps } =
       req.body;
 
     // Ensure that each step has started_at and completed_at fields
@@ -32,6 +32,7 @@ exports.createWorkflow = async (req, res) => {
 
     // Create the workflow with an initial version entry
     const newWorkflow = new Workflow({
+      workflow_name,
       workflow_id,
       exporter_id,
       manufacturer_id,

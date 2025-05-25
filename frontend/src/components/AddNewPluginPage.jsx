@@ -21,11 +21,16 @@ const AppContainer = styled.div`
 
 const ButtonContainer = styled.div`
   display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-  padding: 5px;
-  text-align: right;
+  justify-content: space-between;
+  padding: 5px 10px;
 `;
+
+const LeftButtons = styled.div`
+  display: flex;
+  gap: 10px;
+`;
+
+const RightButtons = styled.div``;
 
 const MainContainer = styled.div`
   display: flex;
@@ -83,7 +88,7 @@ const JSONViewerContainer = styled.div`
 `;
 
 const DSLContainer = styled.div`
-  width: 260px;
+  width: 300px;
   display: flex;
   flex-direction: column; /* Ensures children stack vertically */
   overflow: hidden; /* Prevents overflow issues */
@@ -528,7 +533,7 @@ func main() {
   };
 
   const handleGenerateDSL = async (modelToUse) => {
-    setTerminalLogs(["Starting DSL validation..."]);
+    // setTerminalLogs(["Starting DSL validation..."]);
     try {
       const result = await generateDSL(
         modelToUse,
@@ -566,6 +571,12 @@ func main() {
     document.addEventListener("mousemove", onMouseMove);
     document.addEventListener("mouseup", onMouseUp);
   };
+
+  const handleClearFlowchart = () => {
+    setModel({ nodes: [], links: [] });
+    setProgressiveModel({ nodes: [], links: [] });
+  };
+
 
   return (
     <AppContainer>
@@ -614,12 +625,19 @@ func main() {
         {/* Diagram Canvas */}
         <DiagramContainer>
           <ButtonContainer>
-            <ExportButton onClick={() => window.exportModel()}>
-              Export Model
-            </ExportButton>
-            <SubmitButton onClick={handleGenerateCode} disabled={loading}>
-              {loading ? "Processing..." : "Save Plugin"}
-            </SubmitButton>
+            <LeftButtons>
+              <ExportButton title="Validate flowchart and generate instructions" onClick={() => window.exportModel()}>
+                Generate Instructions
+              </ExportButton>
+              <ExportButton title="Remove the workflow from the canvas" onClick={handleClearFlowchart}>
+                Clear Flowchart
+              </ExportButton>
+            </LeftButtons>
+            <RightButtons>
+              <SubmitButton title="Create a new workflow step based on configurations" onClick={handleGenerateCode} disabled={loading}>
+                {loading ? "Processing..." : "Create New Step"}
+              </SubmitButton>
+            </RightButtons>
           </ButtonContainer>
           <Diagram
             onExport={handleModelChange}

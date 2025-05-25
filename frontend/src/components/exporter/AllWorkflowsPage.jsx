@@ -7,7 +7,7 @@ import Layout from '../MainLayout';
 import { useNavigate } from 'react-router-dom';
 
 //
-// Styled Components
+// Styled ComponentsMainSidebar
 //
 const PageContainer = styled.div`
   padding: 1rem;

@@ -4,7 +4,7 @@ import { generateJSON } from "../../utils/jsonGenerator"; // Function to generat
 import { generateDSL } from "../../utils/dslGenerator"; // Function to generate DSL from JSON
 
 const InstructionsContainer = styled.div`
-  padding: 5px;
+  padding: 10px;
   font-family: monospace;
   font-size: 12px;
   overflow: hidden;
@@ -76,6 +76,12 @@ const TextArea = styled.textarea`
   min-height: 250px; /* Ensures a reasonable minimum height */
 `;
 
+const ButtonRow = styled.div`
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px;
+`;
+
 const DSLInstructions = ({ model, setProgressiveModel, onUpdateModel, logToTerminal, isUpdateWorkFlow, instructions, setInstructions,setReplayMode }) => {
   const [activeTab, setActiveTab] = useState("DSL Editor");
   const [preview, setPreview] = useState("");
@@ -143,7 +149,7 @@ const [progressiveIndex, setProgressiveIndex] = useState(0);
   }, [isProcessing, validatedModel, onUpdateModel]);
 
   const handleUpdate = async () => {
-  logToTerminal("Validating DSL instructions before updating flowchart...");
+  // logToTerminal("Validating DSL instructions before updating flowchart...");
     console.log("Instructions: ", instructions)
   setIsProcessing(true);
 
@@ -177,6 +183,11 @@ const [progressiveIndex, setProgressiveIndex] = useState(0);
   }
   setIsProcessing(false);
 };
+
+  const handleClearInstructions = () => {
+    setInstructions("");
+    // logToTerminal("Instructions cleared");
+  };
 
   // Handle updates to the instructions
   // const handleUpdate = async () => {
@@ -254,7 +265,10 @@ const [progressiveIndex, setProgressiveIndex] = useState(0);
             onChange={(e) => setInstructions(e.target.value)}
             placeholder="Write DSL instructions here..."
           />
-            <UpdateButton onClick={handleUpdate}>Update Workflow</UpdateButton>
+          <ButtonRow>
+            <UpdateButton title="Validate instruction and generate flowchart" onClick={handleUpdate}>Generate Workflow</UpdateButton>
+            <UpdateButton title="Remove all text from the instruction editor" onClick={handleClearInstructions}>Clear Instructions</UpdateButton>
+          </ButtonRow>
         </div>
       )}
 

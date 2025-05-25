@@ -89,3 +89,20 @@ exports.logoutUser = (req, res) => {
     res.status(500).json({ message: "Server error", error: err.message });
   }
 };
+
+exports.changePassword = async (req, res) => {
+  const { user_id, newPassword } = req.body;
+
+  try {
+    const user = await User.findOne({ user_id });
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    user.password = newPassword;
+    user.forcePasswordChange = false;
+    await user.save();
+
+    res.status(200).json({ message: "Password changed successfully" });
+  } catch (err) {
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+};

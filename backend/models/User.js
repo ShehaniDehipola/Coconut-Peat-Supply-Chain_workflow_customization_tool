@@ -4,7 +4,7 @@ const bcrypt = require("bcryptjs");
 const UserSchema = new mongoose.Schema({
   user_id: { type: String, unique: true }, // Unique ID like exp-001
   username: { type: String, required: true, unique: true },
-  email: { type: String, required: true, unique: true },
+  email: { type: String, required: true },
   password: { type: String, required: true },
   role: {
     type: String,
@@ -12,8 +12,10 @@ const UserSchema = new mongoose.Schema({
     enum: ["user", "admin", "exporter", "manufacturer"],
     default: "user",
   },
-  exporter_id: { type: String, default: null },
+  exporter_id: { type: String, sparse: true }, // ONLY for users with role 'exporter'
+  exporter_ref: { type: String, default: null }, // Used to link manufacturer to exporter
   status: { type: Boolean, default: true },
+  forcePasswordChange: { type: Boolean, default: true },
   createdDate: { type: Date, default: Date.now },
 });
 

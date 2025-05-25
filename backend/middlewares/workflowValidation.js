@@ -44,7 +44,7 @@ const validateWorkflowStructure = (req, res, next) => {
 
 // 2. Business logic validation (Checking Required Plugins)
 const validateRequiredPlugins = (req, res, next) => {
-  const requiredSteps = ['Grading', 'Cutting', 'Washing'];
+  const requiredSteps = ['grading', 'cutting', 'washing'];
   const workflowSteps = req.body.steps.map((step) => step.pluginName);
 
   for (let step of requiredSteps) {

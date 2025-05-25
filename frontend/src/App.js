@@ -21,6 +21,7 @@ import { useUser } from './context/UserContext';
 import AllWorkflowsPage from './components/exporter/AllWorkflowsPage';
 import ManufacturerWorkflowsPage from './components/manufacturer/ManufacturerWorkflowsPage';
 import ExporterWorkflow from './components/exporter/ExporterWorkflow';
+import NewManufacturers from "./components/exporter/NewManufacturers";
 
 const ContentArea = styled.div`
   margin-left: ${(props) => (props.expanded ? '0px' : '60px')};
@@ -110,6 +111,13 @@ function App() {
               path='/manufacturer-workflows'
               element={<ManufacturerWorkflowsPage />}
             />
+
+            {/* Route for the manufacturer list  */}
+            <Route
+                path='/manufacturers'
+                element={<NewManufacturers />}
+            />
+
 
             <Route
               path='/each-workflow/:workflowId'

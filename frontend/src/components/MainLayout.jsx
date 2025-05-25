@@ -18,7 +18,7 @@ const Content = styled.div`
 `;
 
 const Layout = ({ children, role }) => {
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(true);
 
   return (
     <Container>

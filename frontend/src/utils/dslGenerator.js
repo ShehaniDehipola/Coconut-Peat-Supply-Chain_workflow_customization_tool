@@ -1,6 +1,23 @@
 export function generateDSL(json, logCallback, setInstructions) {
     return new Promise((resolve, reject) => {
-        const {nodes, links} = json;
+
+        // Early validation before anything else
+        if (!json || typeof json !== 'object') {
+            return reject(new Error('Invalid input: JSON must be a valid object.'));
+        }
+
+        const { nodes, links } = json;
+
+        if (!Array.isArray(nodes) || !Array.isArray(links)) {
+            return reject(new Error("Invalid input: JSON must contain 'nodes' and 'links' arrays."));
+        }
+
+        // If empty, no need to continue
+        if (nodes.length === 0 || links.length === 0) {
+            return reject(new Error('Empty JSON: No nodes or links to process.'));
+        }
+
+        // Begin structured processing
         let instructions = '';
         let isValidationComplete = false;
         console.log('INSSSSSS', setInstructions);
