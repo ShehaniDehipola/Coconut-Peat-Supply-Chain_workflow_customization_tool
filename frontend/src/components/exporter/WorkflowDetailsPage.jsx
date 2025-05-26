@@ -118,10 +118,12 @@ const WorkflowDetailsPaage = () => {
       // We'll let the backend generate a "workflow_id" or you can pass your own
       const payload = {
         exporter_id: user?.exporter_id || "temp-exporter",
+        exporter_name: user?.username,
         steps: [],                  // start empty
         status: "draft",
         version: 1,
       };
+
       const res = await axios.post("http://localhost:5000/api/workflow", payload);
 
       // The response should include the newly created workflow doc

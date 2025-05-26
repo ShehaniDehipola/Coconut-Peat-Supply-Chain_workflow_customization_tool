@@ -12,6 +12,7 @@ const workflowSchema = new mongoose.Schema({
     index: true,
   },
   exporter_id: { type: String, required: true },
+  exporter_name: { type: String, required: true },
   manufacturer_id: { type: String, default: null }, // Null until assigned
   expected_date: { type: Date, required: false },
   versions: [

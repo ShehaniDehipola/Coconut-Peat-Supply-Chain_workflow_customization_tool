@@ -106,7 +106,7 @@ const Login = () => {
         try {
             const res = await axios.post('http://localhost:5000/api/auth/login', { email, password });
             const token = res?.data?.token; // Extract token and user role
-            const { role, exporter_id, user_id } = res.data.user; // Extract role from response
+            const { username, role, exporter_id, user_id, forcePasswordChange } = res.data.user; // Extract role from response
 
              console.log("User Data Received:", res.data.user);
 
@@ -122,7 +122,7 @@ const Login = () => {
             console.log("user's role is: ", role)
             console.log("User's Exporter ID:", exporter_id);
             console.log("User's User ID:", user_id);
-            setUser({ email, role, exporter_id, user_id, token }); // Store user details in context
+            setUser({ username, email, role, exporter_id, user_id, forcePasswordChange, token }); // Store user details in context
             if (role === "exporter") {
                 navigate("/exporter-dashboard"); // Redirect after login
             }

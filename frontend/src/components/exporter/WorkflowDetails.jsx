@@ -415,6 +415,7 @@ const WorkflowDetails = ({}) => {
             workflow_name: workflowName,
             workflow_id: workflowID, // Auto-generated ID
             exporter_id: user.exporter_id,
+            exporter_name: user.username,
             manufacturer_id: selectedManufacturer,
             steps: processedSteps,
         };
@@ -454,6 +455,7 @@ const WorkflowDetails = ({}) => {
             // Optionally, refresh versions list:
             getAllVersions();
             toast.success(`Version ${selectedVersion.versionNumber} has been selected and sent to manufacturer`);
+            navigate("/all-workflows")
         } catch (error) {
             console.error("Error updating workflow status:", error);
             toast.error("Failed to update status: " + error.message);

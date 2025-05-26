@@ -55,6 +55,7 @@ exports.loginUser = async (req, res) => {
         role: user.role,
         exporter_id: user.exporter_id,
         user_id: user.user_id,
+        forcePasswordChange: user.forcePasswordChange,
       },
     });
   } catch (err) {

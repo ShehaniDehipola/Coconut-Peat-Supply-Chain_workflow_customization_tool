@@ -10,7 +10,7 @@ const {
 // create a workflow
 exports.createWorkflow = async (req, res) => {
   try {
-    const { workflow_name, workflow_id, exporter_id, manufacturer_id, expected_date, steps } =
+    const { workflow_name, workflow_id, exporter_id, exporter_name, manufacturer_id, expected_date, steps } =
       req.body;
 
     // Ensure that each step has started_at and completed_at fields
@@ -35,6 +35,7 @@ exports.createWorkflow = async (req, res) => {
       workflow_name,
       workflow_id,
       exporter_id,
+      exporter_name,
       manufacturer_id,
       expected_date: expected_date ? new Date(expected_date) : null, // Store expected completion date
       versions: [
