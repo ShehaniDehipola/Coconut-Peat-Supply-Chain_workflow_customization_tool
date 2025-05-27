@@ -3,7 +3,7 @@ import styled from 'styled-components';
 import {useNavigate} from 'react-router-dom';
 import Modal from "react-modal";
 import {toast, ToastContainer} from "react-toastify";
-import {LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer} from 'recharts';
+import {LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, Cell} from 'recharts';
 import {Heatmap, XAxis as XAxisHeatmap, YAxis as YAxisHeatmap, Tooltip as TooltipHeatmap} from 'recharts';
 import {useUser} from '../../context/UserContext';
 import axios from "axios";
@@ -147,6 +147,10 @@ export const ManufacturerDashboard = () => {
     const navigate = useNavigate();
     const {user, setUser} = useUser();
     const [workflows, setWorkflows] = useState([]);
+    const [efficiencyData, setEfficiencyData] = useState([]);
+  const [stepProgress, setStepProgress] = useState([]);
+  const [alerts, setAlerts] = useState([]);
+  const [bottleneckData, setBottleneckData] = useState([]);
     const [showPrompt, setShowPrompt] = useState(false);
     const [showForm, setShowForm] = useState(false);
     const [newPassword, setNewPassword] = useState("");
@@ -163,19 +167,11 @@ export const ManufacturerDashboard = () => {
         axios
             .get(`http://localhost:5000/api/workflow?manufacturerId=${user.user_id}`)
             .then((response) => {
-                console.log('Fetched Workflows:', response.data);
-
-                const pendingWorkflows = response.data
-                    .filter((wf) => wf.manufacturer_id === user.user_id)
-                    .map((wf) => ({
-                        ...wf,
-                        versions: wf.versions.filter((version) => version.status === 'pending'),
-                    }))
-                    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-
-                setWorkflows(pendingWorkflows.slice(0, 3));
-            })
-            .catch((error) => console.error('Error fetching workflows:', error));
+                const data = response.data || [];
+        setWorkflows(data);
+        extractChartData(data);
+      })
+      .catch((err) => console.error('Failed to load workflows', err));
     }, [user]);
 
     const handlePasswordChange = async () => {
@@ -210,44 +206,119 @@ export const ManufacturerDashboard = () => {
         }
     };
 
+    const extractChartData = (workflowData) => {
+    const efficiencyMap = {}; // { date: { grading: totalMins, count: x } }
+    const stepProgressList = [];
+    const alertList = [];
+    const bottleneckList = [];
+
+    workflowData.forEach((wf) => {
+      const version = wf.versions.at(-1);
+      const workflowId = wf.workflow_id;
+      const bottleneckRow = { workflowId };
+
+      version.steps.forEach((step) => {
+        const name = step.pluginName.toLowerCase();
+        const start = step.started_at ? new Date(step.started_at) : null;
+        const end = step.completed_at ? new Date(step.completed_at) : null;
+        const dateKey = start ? new Date(start).toISOString().slice(0, 10) : 'unknown';
+
+        // Efficiency collection
+        if (start && end) {
+          const durationMin = Math.round((end - start) / 60000);
+          if (!efficiencyMap[dateKey]) efficiencyMap[dateKey] = {};
+          if (!efficiencyMap[dateKey][name]) efficiencyMap[dateKey][name] = [];
+          efficiencyMap[dateKey][name].push(durationMin);
+          bottleneckRow[name] = durationMin;
+        }
+
+        // Step progress (only first step not completed)
+        if (!step.completed_at && !stepProgressList.find(s => s.workflowId === wf.workflow_id)) {
+          stepProgressList.push({
+            workflowId: wf.workflow_id,
+            plugin: step.pluginName,
+            started_at: step.started_at,
+          });
+        }
+
+        // Alerts
+        const now = new Date();
+        if (!step.started_at && (new Date(wf.created_at) < now - 2 * 86400000)) {
+          alertList.push({ workflowId: wf.workflow_id, plugin: step.pluginName, message: 'Step not started after 2+ days' });
+        } else if (start && !end && now - start > 60 * 60000) {
+          alertList.push({ workflowId: wf.workflow_id, plugin: step.pluginName, message: 'Step running over 60 mins' });
+        }
+      });
+       bottleneckList.push(bottleneckRow);
+    });
+
+    const result = Object.entries(efficiencyMap).map(([date, plugins]) => {
+      const entry = { date };
+      Object.entries(plugins).forEach(([plugin, times]) => {
+        entry[plugin] = Math.round(times.reduce((a, b) => a + b, 0) / times.length);
+      });
+      return entry;
+    });
+    setEfficiencyData(result);
+    setStepProgress(stepProgressList);
+    setAlerts(alertList);
+    setBottleneckData(bottleneckList);
+  };
+
+    // const totalWorkflows = workflows.length;
+    // const statusCounts = Array.isArray(workflows)
+    //     ? workflows.reduce((acc, workflow) => {
+    //         acc[workflow.status] = (acc[workflow.status] || 0) + 1;
+    //         return acc;
+    //     }, {Pending: 0, 'In Progress': 0, Completed: 0})
+    //     : {Pending: 0, 'In Progress': 0, Completed: 0};
+
+
+    // const workflowStatusData = {
+    //     labels: ['Pending', 'In Progress', 'Completed'],
+    //     datasets: [
+    //         {
+    //             data: [statusCounts.Pending, statusCounts['In Progress'], statusCounts.Completed],
+    //             backgroundColor: ['#ffc107', '#17a2b8', '#28a745'],
+    //         },
+    //     ],
+    // };
+
+    // const updateWorkflowStatus = (index) => {
+    //     navigate("/each-workflow")
+    // };
+
+    // const productionEfficiencyData = [
+    //     {date: "Feb 1", Grading: 20, Cutting: 25, Washing: 18, Drying: 22},
+    //     {date: "Feb 2", Grading: 18, Cutting: 22, Washing: 16, Drying: 20},
+    //     {date: "Feb 3", Grading: 22, Cutting: 27, Washing: 19, Drying: 23},
+    //     {date: "Feb 4", Grading: 17, Cutting: 21, Washing: 15, Drying: 19},
+    //     {date: "Feb 5", Grading: 23, Cutting: 28, Washing: 20, Drying: 24}
+    // ];
+
+    // const workerProductivityData = [
+    //     {worker: "Worker A", day1: 5, day2: 7, day3: 6, day4: 8, day5: 4},
+    //     {worker: "Worker B", day1: 4, day2: 5, day3: 7, day4: 6, day5: 9},
+    //     {worker: "Worker C", day1: 6, day2: 8, day3: 5, day4: 7, day5: 6},
+    //     {worker: "Worker D", day1: 3, day2: 6, day3: 8, day4: 5, day5: 7},
+    //     {worker: "Worker E", day1: 7, day2: 5, day3: 6, day4: 8, day5: 4}
+    // ];
+
     const totalWorkflows = workflows.length;
-    const statusCounts = Array.isArray(workflows)
-        ? workflows.reduce((acc, workflow) => {
-            acc[workflow.status] = (acc[workflow.status] || 0) + 1;
-            return acc;
-        }, {Pending: 0, 'In Progress': 0, Completed: 0})
-        : {Pending: 0, 'In Progress': 0, Completed: 0};
 
+const statusCounts = workflows.reduce((acc, wf) => {
+  const lastVersion = wf.versions.at(-1);
+  const status = lastVersion?.status?.toLowerCase();
 
-    const workflowStatusData = {
-        labels: ['Pending', 'In Progress', 'Completed'],
-        datasets: [
-            {
-                data: [statusCounts.Pending, statusCounts['In Progress'], statusCounts.Completed],
-                backgroundColor: ['#ffc107', '#17a2b8', '#28a745'],
-            },
-        ],
-    };
+  const mappedStatus = status === 'draft' ? 'In Progress'
+                      : status === 'pending' ? 'Pending'
+                      : status === 'completed' ? 'Completed'
+                      : 'Unknown';
 
-    const updateWorkflowStatus = (index) => {
-        navigate("/each-workflow")
-    };
+  acc[mappedStatus] = (acc[mappedStatus] || 0) + 1;
+  return acc;
+}, {});
 
-    const productionEfficiencyData = [
-        {date: "Feb 1", Grading: 20, Cutting: 25, Washing: 18, Drying: 22},
-        {date: "Feb 2", Grading: 18, Cutting: 22, Washing: 16, Drying: 20},
-        {date: "Feb 3", Grading: 22, Cutting: 27, Washing: 19, Drying: 23},
-        {date: "Feb 4", Grading: 17, Cutting: 21, Washing: 15, Drying: 19},
-        {date: "Feb 5", Grading: 23, Cutting: 28, Washing: 20, Drying: 24}
-    ];
-
-    const workerProductivityData = [
-        {worker: "Worker A", day1: 5, day2: 7, day3: 6, day4: 8, day5: 4},
-        {worker: "Worker B", day1: 4, day2: 5, day3: 7, day4: 6, day5: 9},
-        {worker: "Worker C", day1: 6, day2: 8, day3: 5, day4: 7, day5: 6},
-        {worker: "Worker D", day1: 3, day2: 6, day3: 8, day4: 5, day5: 7},
-        {worker: "Worker E", day1: 7, day2: 5, day3: 6, day4: 8, day5: 4}
-    ];
 
     return (
         <Layout role="manufacturer">
@@ -313,57 +384,81 @@ export const ManufacturerDashboard = () => {
                         <MetricCard type="Completed">Completed: {statusCounts.Completed || 0}</MetricCard>
                     </MetricsContainer>
                     <ChartContainer>
-                        <Title>Workers Productivity </Title>
-                        <table width="100%" height={200}>
-                            <tbody>
-                            {workerProductivityData.map((row, index) => (
-                                <tr key={index}>
-                                    <td>{row.worker}</td>
-                                    {[row.day1, row.day2, row.day3, row.day4, row.day5].map((value, i) => (
-                                        <td key={i}
-                                            style={{backgroundColor: `rgba(216, 149, 39, ${value / 10})`}}>{value}</td>
-                                    ))}
-                                </tr>
-                            ))}
-                            </tbody>
-                        </table>
+                        <Title>Step Bottleneck Heatmap</Title>
+                        <div style={{ overflowX: 'auto' }}>
+              <table width="100%" border="1" style={{ borderCollapse: 'collapse', textAlign: 'center' }}>
+                <thead>
+                  <tr>
+                    <th>Workflow</th>
+                    <th>Grading</th>
+                    <th>Cutting</th>
+                    <th>Washing</th>
+                    <th>Drying</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {bottleneckData.map((row, idx) => (
+                    <tr key={idx}>
+                      <td>{row.workflowId}</td>
+                      {["grading", "cutting", "washing", "drying"].map((plugin) => (
+                        <td
+                          key={plugin}
+                          style={{ backgroundColor: row[plugin] ? `rgba(216, 149, 39, ${Math.min(row[plugin] / 60, 1)})` : '#eee' }}
+                        >
+                          {row[plugin] ? `${row[plugin]}m` : '-'}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
                     </ChartContainer>
                     <WorkflowContainer>
                         <Title>Alerts</Title>
-                        <p>No alerts at this time.</p>
+                        <ScrollableWorkflowList>
+              {alerts.length === 0 ? (
+                <p>No alerts at this time.</p>
+              ) : (
+                alerts.map((alert, idx) => (
+                  <WorkflowItem key={idx}>
+                    <span>{alert.workflowId} — {alert.plugin}</span>
+                    <span>{alert.message}</span>
+                  </WorkflowItem>
+                ))
+              )}
+            </ScrollableWorkflowList>
                     </WorkflowContainer>
                 </LeftSection>
 
                 <RightSection>
                     <ChartContainer>
-                        <Title>Production Efficiency Over Time</Title>
+                        <Title>Production Efficiency Over Time (in minutes)</Title>
                         <ResponsiveContainer width="100%" height={200}>
-                            <LineChart data={productionEfficiencyData}
+                            <LineChart data={efficiencyData}
                                        margin={{top: 10, right: 30, left: 0, bottom: 10}}>
                                 <CartesianGrid strokeDasharray="3 5"/>
                                 <XAxis dataKey="date"/>
                                 <YAxis/>
                                 <Tooltip/>
                                 <Legend/>
-                                <Line type="monotone" dataKey="Grading" stroke="#8884d8"/>
-                                <Line type="monotone" dataKey="Cutting" stroke="#82ca9d"/>
-                                <Line type="monotone" dataKey="Washing" stroke="#ffc658"/>
-                                <Line type="monotone" dataKey="Drying" stroke="#ff7300"/>
+                                <Line type="monotone" dataKey="grading" stroke="#8884d8"/>
+                                <Line type="monotone" dataKey="cutting" stroke="#82ca9d"/>
+                                <Line type="monotone" dataKey="washing" stroke="#ffc658"/>
+                                <Line type="monotone" dataKey="drying" stroke="#ff7300"/>
                             </LineChart>
                         </ResponsiveContainer>
                     </ChartContainer>
                     <WorkflowContainer>
-                        <Title>Assigned Workflows</Title>
+                        <Title>Current Step Progress</Title>
                         <ScrollableWorkflowList>
-                            {workflows.map((workflow) => (
-                                <WorkflowItem key={workflow.id}>
-                                    <span>{workflow.workflow_id}</span>
-                                    <Button onClick={() => alert(`View ${workflow.workflowId}`)}>
-                                        View
-                                    </Button>
-                                </WorkflowItem>
-                            ))}
-                        </ScrollableWorkflowList>
+              {stepProgress.map((step, idx) => (
+                <WorkflowItem key={idx}>
+                  <span>{step.workflowId} — {step.plugin}</span>
+                  <span>{step.started_at ? `Started at ${new Date(step.started_at).toLocaleTimeString()}` : 'Not started'}</span>
+                </WorkflowItem>
+              ))}
+            </ScrollableWorkflowList>
                     </WorkflowContainer>
                 </RightSection>
             </Container>

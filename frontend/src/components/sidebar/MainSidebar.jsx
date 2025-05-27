@@ -197,8 +197,8 @@ const MainSidebar = ({ expanded, setExpanded, role }) => {
             <NavItem onClick={() => navigate("/exporter-dashboard")}><Icon src={dashboardIcon} alt="Dashboard" /><NavText expanded={expanded}>Dashboard</NavText></NavItem>
           <NavItem onClick={() => navigate("/all-workflows")}><Icon src={workflowIcon} alt="Workflow" /><NavText expanded={expanded}>Workflows</NavText></NavItem>
             <NavItem onClick={() => navigate("/manufacturers")}><Icon src={manufacturerIcon} alt="Manufacturer" /><NavText expanded={expanded}>Manufacturers</NavText></NavItem>
-            <NavItem onClick={() => navigate("/reports")}><Icon src={reportsIcon} alt="Report" /><NavText expanded={expanded}>Reports & Analytics</NavText></NavItem>
-        <NavItem onClick={() => navigate("/settings")}><Icon src={settingsIcon} alt="Settings" /><NavText expanded={expanded}>Settings</NavText></NavItem>
+            {/* <NavItem onClick={() => navigate("/reports")}><Icon src={reportsIcon} alt="Report" /><NavText expanded={expanded}>Reports & Analytics</NavText></NavItem>
+        <NavItem onClick={() => navigate("/settings")}><Icon src={settingsIcon} alt="Settings" /><NavText expanded={expanded}>Settings</NavText></NavItem> */}
           </>
         )}
 
@@ -207,8 +207,8 @@ const MainSidebar = ({ expanded, setExpanded, role }) => {
           <NavItem onClick={() => navigate("/manufacturer-dashboard")}><Icon src={dashboardIcon} alt="Dashboard" /><NavText expanded={expanded}>Dashboard</NavText></NavItem>
           <NavItem onClick={() => navigate("/manufacturer-workflows")}><Icon src={workflowIcon} alt="Workflow" /><NavText expanded={expanded}>Workflows</NavText></NavItem>
             {/* <NavItem onClick={() => navigate("/assigned-workflows")}>Assigned Workflows</NavItem> */}
-            <NavItem onClick={() => navigate("/reports")}><Icon src={reportsIcon} alt="Report" /><NavText expanded={expanded}>Reports & Analytics</NavText></NavItem>
-            <NavItem onClick={() => navigate("/settings")}><Icon src={settingsIcon} alt="Settings" /><NavText expanded={expanded}>Settings</NavText></NavItem>
+            {/* <NavItem onClick={() => navigate("/reports")}><Icon src={reportsIcon} alt="Report" /><NavText expanded={expanded}>Reports & Analytics</NavText></NavItem>
+            <NavItem onClick={() => navigate("/settings")}><Icon src={settingsIcon} alt="Settings" /><NavText expanded={expanded}>Settings</NavText></NavItem> */}
           </>
         )}
 

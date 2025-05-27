@@ -330,6 +330,11 @@ const WorkflowDetails = ({}) => {
         }
     }, [initialWorkflowID]);
 
+    useEffect(() => {
+  console.log("User context inside WorkflowDetails:", user);
+}, [user]);
+
+
     const getAllVersions = async () => {
         try {
             const response = await axios.get(`http://localhost:5000/api/workflow/version/${workflowID}`);

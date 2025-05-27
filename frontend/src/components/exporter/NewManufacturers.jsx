@@ -45,7 +45,7 @@ const Label = styled.label`
 `;
 
 const Input = styled.input`
-    width: 100%;
+    width: 80%;
     padding: 0.5rem;
     border: 1px solid #ccc;
     border-radius: 4px;
@@ -157,12 +157,12 @@ const ManufacturerManagement = () => {
 
                                 <Label>Email</Label>
                                 <Input name="email" value={formData.email} onChange={handleChange} required />
+
+                                <Label>Contact Number</Label>
+                                <Input name="contactNumber" value={formData.contactNumber} onChange={handleChange} required />
                             </FormColumn>
 
                             <FormColumn>
-                                <Label>Contact Number</Label>
-                                <Input name="contactNumber" value={formData.contactNumber} onChange={handleChange} required />
-
                                 <Label>Address</Label>
                                 <TextArea name="address" value={formData.address} onChange={handleChange} required />
                             </FormColumn>
