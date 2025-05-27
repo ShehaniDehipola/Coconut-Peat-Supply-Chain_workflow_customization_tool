@@ -315,7 +315,7 @@ const WorkflowCustomizationTool = () => {
     const [workflowID, setWorkflowID] = useState('');
     const [plugins, setPlugins] = useState({
         column1: {
-            name: 'Plugins',
+            name: 'Steps',
             items: [
                 {id: 'plugin-1', content: 'grading'},
                 {id: 'plugin-2', content: 'cutting'},
@@ -345,7 +345,7 @@ const WorkflowCustomizationTool = () => {
         'plugin-3': {
             name: 'washing',
             steps: [
-                'Fill Tanks r',
+                'Fill Tanks',
                 'Wash for 24 Hours',
                 'Wash for Another 24 Hours',
                 'Final Wash for 12 Hours',
@@ -525,7 +525,7 @@ const WorkflowCustomizationTool = () => {
 
                     addLog(' Workflow updated successfully!');
                     setProgress(100);
-                    await new Promise((resolve) => setTimeout(resolve, 20000));
+                    await new Promise((resolve) => setTimeout(resolve, 10000));
 
                     // After successful update, navigate to the details page
                     navigate("/workflow-details", {state: {workflow_id: workflowID, steps: stepsData}});
@@ -538,7 +538,7 @@ const WorkflowCustomizationTool = () => {
                 setProgress(100);
                 // Step 3: If creating a new workflow, navigate to workflow-details
                 console.log('Navigating to workflow-details with:', workflowID, stepsData);
-                await new Promise((resolve) => setTimeout(resolve, 500));
+                await new Promise((resolve) => setTimeout(resolve, 10000));
                 navigate("/workflow-details", {state: {workflow_id: workflowID, steps: stepsData}});
             }
         } catch (error) {

@@ -355,6 +355,31 @@ export const ManufacturerWorkflowPage = () => {
     if (error) return <div>Error: {error.message}</div>;
     if (!workflow) return <div>No workflow data found</div>;
 
+    const areAllStepsCompleted = (steps) => {
+  return steps.every(step => step.status === 'Completed');
+};
+
+    const updateWorkflowVersionStatus = async (newStatus) => {
+  try {
+    const versionNumber = workflow?.versions?.find(v => v.status === 'pending')?.versionNumber;
+
+    if (!versionNumber) {
+      console.warn('Version number not found');
+      return;
+    }
+
+    await axios.put(`http://localhost:5000/api/workflow/${workflow.workflow_id}/status`, {
+      status: newStatus,
+      versionNumber
+    });
+
+    toast.success(`Workflow version marked as ${newStatus}`);
+  } catch (error) {
+    console.error('Error updating workflow version status:', error);
+    toast.error('Failed to update workflow version status');
+  }
+};
+
     // Handle plugin-level Start/Next
     const handleStatusChange = async (stepIndex, actionType) => {
         try {
@@ -396,6 +421,7 @@ export const ManufacturerWorkflowPage = () => {
                     status: 'in_progress'
                 };
                 updatedSteps[stepIndex].status = 'In Progress';
+                await updateWorkflowVersionStatus('in progress');
             } else if (actionType === 'next') {
                 payload = {
                     completed_at: new Date().toISOString(),
@@ -406,6 +432,9 @@ export const ManufacturerWorkflowPage = () => {
                 if (stepIndex + 1 < updatedSteps.length) {
                     updatedSteps[stepIndex + 1].status = 'Pending';
                 }
+                if (areAllStepsCompleted(updatedSteps)) {
+    await updateWorkflowVersionStatus('completed');
+  }
             }
 
             await axios.put(

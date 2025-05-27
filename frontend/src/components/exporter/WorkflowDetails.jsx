@@ -577,12 +577,12 @@ const WorkflowDetails = ({}) => {
                 <RightContainer>
 
                     <InfoRow>
-                        <Label>Workflow ID:</Label> <span>{workflowID || "N/A"}</span>
+                        <Label>Workflow ID:</Label> <span>{workflowID || "0"}</span>
                     </InfoRow>
 
 
                     <InfoRow>
-                        <Label>Selected Version:</Label> <span>{selectedVersion?.versionNumber || "N/A"}</span>
+                        <Label>Selected Version:</Label> <span>{selectedVersion?.versionNumber || "0"}</span>
                     </InfoRow>
 
                     <InfoRow>

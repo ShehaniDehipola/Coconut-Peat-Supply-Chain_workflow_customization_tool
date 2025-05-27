@@ -149,8 +149,12 @@ export const WorkflowOverview = () => {
 
   const statusCounts = workflows.reduce((acc, wf) => {
     const lastVer = wf.versions.at(-1);
-    const status = lastVer?.status || 'unknown';
-    acc[status] = (acc[status] || 0) + 1;
+    const rawStatus = lastVer?.status?.toLowerCase() || 'unknown';
+const normalizedStatus =
+  rawStatus === 'draft' ? 'in progress' :
+  rawStatus === 'inprogress' ? 'in progress' :
+  rawStatus;
+acc[normalizedStatus] = (acc[normalizedStatus] || 0) + 1;
     return acc;
   }, {});
 
@@ -162,7 +166,7 @@ export const WorkflowOverview = () => {
       backgroundColor: Object.keys(statusCounts).map(status => {
         switch (status) {
           case 'pending': return '#ffc107';
-          case 'in Progress': return '#17a2b8';
+          case 'in progress': return '#17a2b8';
           case 'completed': return '#28a745';
           default: return '#6c757d';
         }
@@ -171,10 +175,12 @@ export const WorkflowOverview = () => {
   ],
 };
 
+
 const formatStatus = (status) => {
   switch (status?.toLowerCase()) {
     case 'pending': return 'Pending';
     case 'draft': return 'In Progress';
+    case 'in progress': return 'In Progress';
     case 'completed': return 'Completed';
     default: return 'Unknown';
   }
@@ -254,7 +260,7 @@ const getStatusColor = (status) => {
           <MetricsContainer>
             <MetricCard type="Total">Total: {workflows.length}</MetricCard>
             <MetricCard type="Pending">Pending: {statusCounts['pending'] || 0}</MetricCard>
-            <MetricCard type="InProgress">In Progress: {statusCounts['draft'] || 0}</MetricCard>
+            <MetricCard type="InProgress">In Progress: {statusCounts['in progress'] || 0}</MetricCard>
             <MetricCard type="Completed">Completed: {statusCounts['completed'] || 0}</MetricCard>
           </MetricsContainer>
           <WorkflowTableContainer>

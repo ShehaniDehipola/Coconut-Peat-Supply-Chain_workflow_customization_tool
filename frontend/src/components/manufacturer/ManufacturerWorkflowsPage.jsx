@@ -76,16 +76,14 @@ const StatusBadge = styled.span`
   font-weight: 600;
   color: #fff;
   background-color: ${({ status }) => {
-    switch (status) {
-      case 'pending':
-        return '#ffc107';
-      case 'In Progress':
-        return '#17a2b8';
-      case 'Completed':
-        return '#28a745';
-      default:
-        return '#6c757d';
-    }
+  switch (status.toLowerCase()) {
+    case 'pending': return '#ffc107';
+    case 'in progress': return '#17a2b8';
+    case 'completed': return '#28a745';
+    default: return '#6c757d';
+  }
+}};
+
   }};
 `;
 
@@ -145,43 +143,46 @@ const ManufacturerWorkflowsPage = () => {
     axios
       .get('http://localhost:5000/api/workflow')
       .then((response) => {
-        console.log('Workflow data:', response.data);
-
-        // Filter workflows where manufacturer_id matches the logged-in user and version status is 'pending'
-        const filteredWorkflows = response.data
-          .filter((wf) => 
-            wf.manufacturer_id === user.user_id &&
-            wf.versions.some((version) => version.status === 'pending')
-          )
-          .map((wf) => ({
-            ...wf,
-            versions: wf.versions.filter((version) => version.status === 'pending'),
-          }));
-
-        setWorkflows(filteredWorkflows);
-      })
-      .catch((error) => {
-        console.error('Error fetching workflows:', error);
+      const filteredWorkflows = response.data.filter(
+        (wf) => wf.manufacturer_id === user.user_id
+      ).map((wf) => {
+        const latestVersion = wf.versions[wf.versions.length - 1]; // assume last version is current
+        return {
+          ...wf,
+          currentStatus: latestVersion.status,
+          progress: latestVersion.status === 'completed'
+            ? 100
+            : latestVersion.status === 'in progress'
+              ? 50
+              : 25
+        };
       });
-  }, [user]);
+      setWorkflows(filteredWorkflows);
+    })
+    .catch((error) => {
+      console.error('Error fetching workflows:', error);
+    });
+}, [user]);
 
   const filteredWorkflows = useMemo(() => {
-    return workflows.filter((wf) => {
-      const matchesSearch = wf.workflow_id.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesStatus = statusFilter ? wf.status === statusFilter : true;
-      const wfDate = new Date(wf.created_at);
-      const fromDate = dateFrom ? new Date(dateFrom) : null;
-      const toDate = dateTo ? new Date(dateTo) : null;
-      const inRange = (!fromDate || wfDate >= fromDate) && (!toDate || wfDate <= toDate);
-      return matchesSearch && matchesStatus && inRange;
-    });
-  }, [workflows, searchTerm, statusFilter, dateFrom, dateTo]);
+  return workflows.filter((wf) => {
+    const matchesSearch = wf.workflow_id.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = statusFilter ? wf.currentStatus === statusFilter.toLowerCase() : true;
+    const wfDate = new Date(wf.created_at);
+    const fromDate = dateFrom ? new Date(dateFrom) : null;
+    const toDate = dateTo ? new Date(dateTo) : null;
+    const inRange = (!fromDate || wfDate >= fromDate) && (!toDate || wfDate <= toDate);
+    return matchesSearch && matchesStatus && inRange;
+  });
+}, [workflows, searchTerm, statusFilter, dateFrom, dateTo]);
+
 
   // Compute workflow counts
   const totalCount = workflows.length;
-  const pendingCount = workflows.reduce((count, wf) => count + wf.versions.length, 0);
-  const inProgressCount = workflows.filter((wf) => wf.status === 'In Progress').length;
-  const completedCount = workflows.filter((wf) => wf.status === 'Completed').length;
+const pendingCount = workflows.filter(wf => wf.currentStatus === 'pending').length;
+const inProgressCount = workflows.filter(wf => wf.currentStatus === 'in progress').length;
+const completedCount = workflows.filter(wf => wf.currentStatus === 'completed').length;
+
     
     const viewWorkflowDetails = (workflow_id) => {
     navigate(`/each-workflow/${workflow_id}`)
@@ -218,6 +219,7 @@ const ManufacturerWorkflowsPage = () => {
         <thead>
           <tr>
             <TableHeaderCell>Workflow ID</TableHeaderCell>
+            <TableHeaderCell>Workflow Name</TableHeaderCell>
             <TableHeaderCell>Exporter ID</TableHeaderCell>
             <TableHeaderCell>Date Created</TableHeaderCell>
             <TableHeaderCell>Status</TableHeaderCell>
@@ -229,20 +231,25 @@ const ManufacturerWorkflowsPage = () => {
           {filteredWorkflows.map((wf) => (
             <TableRow key={wf._id}>
               <TableCell>{wf.workflow_id}</TableCell>
+              <TableCell>{wf.workflow_name}</TableCell>
               <TableCell>{wf.exporter_id}</TableCell>
               <TableCell>{new Date(wf.created_at).toLocaleDateString()}</TableCell>
               <TableCell>
-                {wf.versions.find((version) => version.status === 'pending') ? (
-                  <StatusBadge status="pending">Pending</StatusBadge>
-                ) : (
-                  <StatusBadge status="unknown">Unknown</StatusBadge>
-                )}
-              </TableCell>
-              <TableCell>
-                <ProgressBarContainer>
-                  <ProgressBarFill progress={wf.progress} />
-                </ProgressBarContainer>
-              </TableCell>
+  {wf.currentStatus ? (
+    <StatusBadge status={wf.currentStatus}>
+      {wf.currentStatus.charAt(0).toUpperCase() + wf.currentStatus.slice(1)}
+    </StatusBadge>
+  ) : (
+    <StatusBadge status="unknown">Unknown</StatusBadge>
+  )}
+</TableCell>
+
+<TableCell>
+  <ProgressBarContainer>
+    <ProgressBarFill progress={wf.progress} />
+  </ProgressBarContainer>
+</TableCell>
+
               <TableCell>
                 <Button onClick={() => viewWorkflowDetails(wf.workflow_id)}>
                   View
