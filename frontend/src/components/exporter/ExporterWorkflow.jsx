@@ -168,7 +168,6 @@ const ExporterWorkflow = () => {
             <Th>Completed Time</Th>
             <Th>Status</Th>
             <Th>Required Amount</Th>
-            <Th>Notes</Th>
           </tr>
         </thead>
             <tbody>
@@ -189,7 +188,6 @@ const ExporterWorkflow = () => {
                     </StatusBadge>
                   </Td>
                   <Td>{step.required_amount ?? "-"}</Td>
-                  <Td>{step.notes || "-"}</Td>
                 </Tr>
                 {/* Sub-Step Rows */}
                 {step.sub_steps &&

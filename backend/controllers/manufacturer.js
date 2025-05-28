@@ -89,7 +89,7 @@ exports.getAllManufacturers = async (req, res) => {
 
 exports.getManufacturersByExporter = async (req, res) => {
   try {
-    const exporterId = req.user.user_id; // e.g., "exp-001"
+    const exporterId = req.user.exporter_id; // e.g., "exp-001"
 
     const manufacturers = await User.find({
       role: "manufacturer",

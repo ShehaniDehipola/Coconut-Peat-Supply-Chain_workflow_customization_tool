@@ -4,6 +4,8 @@ import { Pie, Bar, Line } from 'react-chartjs-2';
 import 'chart.js/auto';
 import Header from '../Header';
 import Layout from '../MainLayout';
+import { useUser } from '../../context/UserContext';
+import axios from 'axios';
 
 const Container = styled.div`
   display: flex;
@@ -128,62 +130,127 @@ const Button = styled.button`
 `;
 
 export const WorkflowOverview = () => {
-  const [workflows, setWorkflows] = useState([
-      { id: '1', name: 'Workflow 1', dateSent: '2024-11-10', status: 'Pending' },
-      { id: '2', name: 'Workflow 2', dateSent: '2024-11-12', status: 'In Progress' },
-      { id: '3', name: 'Workflow 3', dateSent: '2024-11-15', status: 'Completed' },
-      { id: '4', name: 'Workflow 4', dateSent: '2024-11-18', status: 'Pending' },
-  ]);
+  const [workflows, setWorkflows] = useState([]);
+  const {user} = useUser();
+  const exporterId = user?.exporter_id;
 
-  const statusCounts = workflows.reduce(
-    (acc, workflow) => {
-      acc[workflow.status] = (acc[workflow.status] || 0) + 1;
-      return acc;
-    },
-    { Pending: 0, 'In Progress': 0, Completed: 0 }
-  );
+  useEffect(() => {
+    const fetchWorkflows = async () => {
+      try {
+        const res = await axios.get('http://localhost:5000/api/workflow');
+        const filtered = res.data.filter(wf => wf.exporter_id === exporterId);
+        setWorkflows(filtered);
+      } catch (err) {
+        console.error("Error loading workflows", err);
+      }
+    };
+    if (exporterId) fetchWorkflows();
+  }, [exporterId]);
 
-  // Pie Chart - Workflow Status Overview
-const workflowStatusData = {
-  labels: ['Pending', 'In Progress', 'Completed'],
+  const statusCounts = workflows.reduce((acc, wf) => {
+    const lastVer = wf.versions.at(-1);
+    const rawStatus = lastVer?.status?.toLowerCase() || 'unknown';
+const normalizedStatus =
+  rawStatus === 'draft' ? 'in progress' :
+  rawStatus === 'inprogress' ? 'in progress' :
+  rawStatus;
+acc[normalizedStatus] = (acc[normalizedStatus] || 0) + 1;
+    return acc;
+  }, {});
+
+  const workflowStatusData = {
+  labels: Object.keys(statusCounts),
   datasets: [
     {
-      data: [statusCounts.Pending, statusCounts['In Progress'], statusCounts.Completed],
-      backgroundColor: ['#ffc107', '#17a2b8', '#28a745'],
+      data: Object.values(statusCounts),
+      backgroundColor: Object.keys(statusCounts).map(status => {
+        switch (status) {
+          case 'pending': return '#ffc107';
+          case 'in progress': return '#17a2b8';
+          case 'completed': return '#28a745';
+          default: return '#6c757d';
+        }
+      }),
     },
   ],
 };
 
-  // Line Chart - Order Processing Time Over the Last 5 Months
-const orderProcessingTimeData = {
-  labels: ['Oct', 'Nov', 'Dec', 'Jan', 'Feb'],
-  datasets: [
-    {
-      label: 'Average Processing Time (days)',
-      data: [12, 10, 15, 9, 11], // Sample Data
-      borderColor: '#2D3142',
-      backgroundColor: 'rgba(45, 49, 66, 0.2)',
-      fill: true,
-    },
-  ],
+
+const formatStatus = (status) => {
+  switch (status?.toLowerCase()) {
+    case 'pending': return 'Pending';
+    case 'draft': return 'In Progress';
+    case 'in progress': return 'In Progress';
+    case 'completed': return 'Completed';
+    default: return 'Unknown';
+  }
+};
+
+const getStatusColor = (status) => {
+  switch (status) {
+    case 'Pending': return '#ffc107';
+    case 'In Progress': return '#17a2b8';
+    case 'Completed': return '#28a745';
+    default: return '#6c757d';
+  }
+};
+
+
+  const workflowsByMonth = {};
+  workflows.forEach(wf => {
+    const month = new Date(wf.created_at).toLocaleString('default', { month: 'short', year: 'numeric' });
+    workflowsByMonth[month] = (workflowsByMonth[month] || 0) + 1;
+  });
+
+  const creationTrendData = {
+    labels: Object.keys(workflowsByMonth),
+    datasets: [
+      {
+        label: 'Workflows Created',
+        data: Object.values(workflowsByMonth),
+        fill: true,
+        backgroundColor: 'rgba(45, 49, 66, 0.2)',
+        borderColor: '#2D3142',
+      },
+    ],
   };
-  
-  // Bar Chart - Supplier Performance Comparison
-const supplierPerformanceData = {
-  labels: ['Supplier A', 'Supplier B', 'Supplier C', 'Supplier D'],
-  datasets: [
-    {
-      label: 'On-Time Deliveries',
-      data: [90, 85, 95, 80], // Sample Data (percentage)
-      backgroundColor: '#2D3142',
-    },
-    {
-      label: 'Rejection Rate (%)',
-      data: [5, 7, 3, 10], // Sample Data (percentage)
-      backgroundColor: '#d89527',
-    },
-  ],
-};
+
+  const pluginUsage = {};
+  workflows.forEach(wf => {
+    wf.versions.forEach(ver => {
+      ver.steps.forEach(step => {
+        pluginUsage[step.pluginName] = (pluginUsage[step.pluginName] || 0) + 1;
+      });
+    });
+  });
+
+  const pluginUsageData = {
+    labels: Object.keys(pluginUsage),
+    datasets: [
+      {
+        label: 'Plugin Usage Count',
+        data: Object.values(pluginUsage),
+        backgroundColor: '#d89527',
+      },
+    ],
+  };
+
+  const workflowsByManufacturer = workflows.reduce((acc, wf) => {
+    const manufacturer = wf.manufacturer_id || 'Unknown';
+    acc[manufacturer] = (acc[manufacturer] || 0) + 1;
+    return acc;
+  }, {});
+
+  const manufacturerData = {
+    labels: Object.keys(workflowsByManufacturer),
+    datasets: [
+      {
+        label: 'Workflows per Manufacturer',
+        data: Object.values(workflowsByManufacturer),
+        backgroundColor: '#2D3142',
+      },
+    ],
+  };
 
   return (
     <Layout role="exporter">
@@ -192,31 +259,35 @@ const supplierPerformanceData = {
         <LeftSection>
           <MetricsContainer>
             <MetricCard type="Total">Total: {workflows.length}</MetricCard>
-            <MetricCard type="Pending">Pending: {statusCounts.Pending || 0}</MetricCard>
-            <MetricCard type="InProgress">In Progress: {statusCounts['In Progress'] || 0}</MetricCard>
-            <MetricCard type="Completed">Completed: {statusCounts.Completed || 0}</MetricCard>
+            <MetricCard type="Pending">Pending: {statusCounts['pending'] || 0}</MetricCard>
+            <MetricCard type="InProgress">In Progress: {statusCounts['in progress'] || 0}</MetricCard>
+            <MetricCard type="Completed">Completed: {statusCounts['completed'] || 0}</MetricCard>
           </MetricsContainer>
           <WorkflowTableContainer>
-            <Title>Workflows</Title>
+            <Title>All Workflows</Title>
             <ScrollableWorkflowList>
-              {workflows.map((workflow) => (
-                <WorkflowItem key={workflow.id}>
-                  <span>{workflow.id}</span>
-                  <StatusLabel status={workflow.status}>{workflow.status}</StatusLabel>
-                </WorkflowItem>
-              ))}
+              {workflows.map((workflow) => {
+                const lastVersion = workflow.versions.at(-1);
+                const statusLabel = formatStatus(lastVersion?.status);
+                return (
+                  <WorkflowItem key={workflow.workflow_id}>
+                    <span>{workflow.workflow_name}</span>
+                    <StatusLabel status={statusLabel}>{statusLabel}</StatusLabel>
+                  </WorkflowItem>
+                );
+              })}
             </ScrollableWorkflowList>
           </WorkflowTableContainer>
         </LeftSection>
 
         <MiddleSection>
           <ChartContainer>
-            <Title>Order Processing Time</Title>
-            <Line data={orderProcessingTimeData} />
+            <Title>Workflow Creation Trend</Title>
+            <Line data={creationTrendData} />
           </ChartContainer>
           <ChartContainer>
-            <Title>Manufacturers Performance</Title>
-            <Bar data={supplierPerformanceData} />
+            <Title>Plugin Usage Frequency</Title>
+            <Bar data={pluginUsageData} />
           </ChartContainer>
         </MiddleSection>
 
@@ -226,15 +297,8 @@ const supplierPerformanceData = {
             <Pie data={workflowStatusData} />
           </ChartContainer>
           <WorkflowTableContainer>
-            <Title>Delayed Workflows</Title>
-            <ScrollableWorkflowList>
-              {workflows.filter(w => w.status === 'Pending').map((workflow) => (
-                <WorkflowItem key={workflow.id}>
-                  <span>{workflow.id}</span>
-                  <Button>View</Button>
-                </WorkflowItem>
-              ))}
-            </ScrollableWorkflowList>
+            <Title>Workflows by Manufacturer</Title>
+            <Bar data={manufacturerData} />
           </WorkflowTableContainer>
         </RightSection>
       </Container>

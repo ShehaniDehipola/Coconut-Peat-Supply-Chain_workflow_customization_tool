@@ -18,7 +18,7 @@ const Container = styled.div`
     margin-bottom: 2rem;
 `;
 
-const Title = styled.h2`
+const Title = styled.h4`
     margin-bottom: 1rem;
 `;
 
@@ -45,7 +45,7 @@ const Label = styled.label`
 `;
 
 const Input = styled.input`
-    width: 100%;
+    width: 80%;
     padding: 0.5rem;
     border: 1px solid #ccc;
     border-radius: 4px;
@@ -157,18 +157,18 @@ const ManufacturerManagement = () => {
 
                                 <Label>Email</Label>
                                 <Input name="email" value={formData.email} onChange={handleChange} required />
+
+                                <Label>Contact Number</Label>
+                                <Input name="contactNumber" value={formData.contactNumber} onChange={handleChange} required />
                             </FormColumn>
 
                             <FormColumn>
-                                <Label>Contact Number</Label>
-                                <Input name="contactNumber" value={formData.contactNumber} onChange={handleChange} required />
-
                                 <Label>Address</Label>
                                 <TextArea name="address" value={formData.address} onChange={handleChange} required />
+                        <Button type="submit">Create Manufacturer</Button>
                             </FormColumn>
                         </FormRow>
 
-                        <Button type="submit">Create</Button>
                     </StyledForm>
                 </Container>
 
@@ -180,7 +180,6 @@ const ManufacturerManagement = () => {
                             <TableHeaderCell>User ID</TableHeaderCell>
                             <TableHeaderCell>Name</TableHeaderCell>
                             <TableHeaderCell>Email</TableHeaderCell>
-                            <TableHeaderCell>Contact</TableHeaderCell>
                             <TableHeaderCell>Exporter Ref</TableHeaderCell>
                         </tr>
                         </thead>
@@ -190,13 +189,13 @@ const ManufacturerManagement = () => {
                                 <TableCell>{manu.user_id}</TableCell>
                                 <TableCell>{manu.username}</TableCell>
                                 <TableCell>{manu.email}</TableCell>
-                                <TableCell>{manu.contactNumber}</TableCell>
                                 <TableCell>{manu.exporter_ref}</TableCell>
                             </TableRow>
                         ))}
                         </tbody>
                     </StyledTable>
                 </Container>
+                <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} />
             </PageContainer>
         </Layout>
     );
