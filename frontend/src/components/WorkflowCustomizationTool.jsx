@@ -345,7 +345,7 @@ const WorkflowCustomizationTool = () => {
         'plugin-3': {
             name: 'washing',
             steps: [
-                'Fill Tanks r',
+                'Fill Tanks',
                 'Wash for 24 Hours',
                 'Wash for Another 24 Hours',
                 'Final Wash for 12 Hours',
@@ -413,7 +413,7 @@ const WorkflowCustomizationTool = () => {
             return;
         }
 
-        await new Promise((resolve) => setTimeout(resolve, 2000)); // Wait for 2 seconds before log
+        await new Promise((resolve) => setTimeout(resolve, 4000)); // Wait for 2 seconds before log
 
         setIsLoading(false); // Stop loading before logs print
         addLog(' Preparing workflow data...');

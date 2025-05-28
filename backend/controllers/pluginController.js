@@ -107,6 +107,26 @@ exports.grpcFun = async (req, res) => {
   );
 };
 
+
+exports.grpcFun2 = async (req, res) => {
+  const { plugin_name,workflow_id,action } = req.body;
+
+  if (!workflow_id || !plugin_name || !action) {
+    return res.status(400).json({ error: 'Missing required fields' });
+  }
+
+  console.log("plugin_name",plugin_name)
+  client.ClientFunction(
+      { plugin_name, workflow_id, action },
+      (error, response) => {
+        if (error) {
+          return res.status(500).json({ error: error.message });
+        }
+        res.json(response);
+      }
+  );
+};
+
 exports.processAll = async (req, res) => {
   try {
     const {
