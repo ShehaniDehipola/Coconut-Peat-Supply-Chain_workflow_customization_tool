@@ -129,6 +129,9 @@ const Login = () => {
             if (role === "manufacturer") {
                 navigate("/manufacturer-dashboard"); // Redirect after login
             }
+            if (role === "customer") {
+                navigate("/customer-dashboard"); // Redirect after login
+            }
         } catch (err) {
             console.error('Error logging in:', err.response.data.message);
         }

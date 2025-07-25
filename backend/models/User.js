@@ -9,7 +9,7 @@ const UserSchema = new mongoose.Schema({
   role: {
     type: String,
     required: true,
-    enum: ["user", "admin", "exporter", "manufacturer"],
+    enum: ["user", "admin", "exporter", "manufacturer", "customer"],
     default: "user",
   },
   exporter_id: { type: String, sparse: true }, // ONLY for users with role 'exporter'

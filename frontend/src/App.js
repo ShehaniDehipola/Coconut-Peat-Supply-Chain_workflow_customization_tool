@@ -22,6 +22,8 @@ import AllWorkflowsPage from './components/exporter/AllWorkflowsPage';
 import ManufacturerWorkflowsPage from './components/manufacturer/ManufacturerWorkflowsPage';
 import ExporterWorkflow from './components/exporter/ExporterWorkflow';
 import NewManufacturers from "./components/exporter/NewManufacturers";
+import AllCustomers from './components/customer/AllCustomersPage';
+import CustomerManagement from './components/customer/NewCustomer';
 
 const ContentArea = styled.div`
   margin-left: ${(props) => (props.expanded ? '0px' : '60px')};
@@ -81,6 +83,18 @@ function App() {
             <Route
               path='/all-workflows'
               element={<AllWorkflowsPage />}
+            />
+
+            {/* Route for the exporter customers page */}
+            <Route
+              path='/customers'
+              element={<AllCustomers />}
+            />
+
+            {/* Route for the exporter customers page */}
+            <Route
+              path='/new-customer'
+              element={<CustomerManagement />}
             />
 
             {/* Route for the exporter workflow track page */}
