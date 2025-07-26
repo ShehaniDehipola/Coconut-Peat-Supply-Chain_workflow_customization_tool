@@ -292,6 +292,9 @@ const WorkflowDetails = ({}) => {
 
     const [workflowName, setWorkflowName] = useState("");
     const [workflowID, setWorkflowID] = useState(""); // Auto-generated ID
+    const [workflowObjectId, setWorkflowObjectId] = useState(null);
+    const [customers, setCustomers] = useState([]);
+    const [selectedCustomerId, setSelectedCustomerId] = useState("");
     const [status, setStatus] = useState("pending"); // Default status
     const [version, setVersion] = useState(1); // Default version
     const [manufacturers, setManufacturers] = useState([]);
@@ -429,6 +432,15 @@ const WorkflowDetails = ({}) => {
         try {
             await axios.post("http://localhost:5000/api/workflow/", workflowData);
             toast.success("Workflow Created Successfully!");
+
+          // fetch workfloww by workflow id
+      const workflowRes = await axios.get(`http://localhost:5000/api/workflow/${workflowID}`, {
+        headers: {
+          Authorization: `Bearer ${user.token}`,
+        },
+      });
+
+      setWorkflowObjectId(workflowRes.data._id); // set object id of the wworkflow  
         } catch (error) {
             console.error(error);
             toast.error(error.message);
@@ -488,6 +500,50 @@ const WorkflowDetails = ({}) => {
         }
     };
 
+    useEffect(() => {
+        const fetchWorkflowAndCustomers = async () => {
+            try {
+        // fetch workfloww by workflow id
+    //   const workflowRes = await axios.get(`http://localhost:5000/api/workflow/${workflowID}`, {
+    //     headers: {
+    //       Authorization: `Bearer ${user.token}`,
+    //     },
+    //   });
+
+    //   setWorkflowObjectId(workflowRes.data._id); // set object id of the wworkflow
+
+      // Fetch all customers
+      const customerRes = await axios.get("http://localhost:5000/api/customer/all", {
+        headers: {
+          Authorization: `Bearer ${user.token}`,
+        },
+      });
+      setCustomers(customerRes.data);
+      console.log("Customer: ", customers)
+    } catch (err) {
+      console.error("Workflow fetch failed", err);
+    }
+  };
+
+  if (workflowID) {
+    fetchWorkflowAndCustomers();
+  }
+}, [workflowID]);
+
+const assignWorkflowToCustomer = async (workflowID, customerID) => {
+  try {
+    const response = await axios.put("http://localhost:5000/api/customer/assign-workflow", {
+      customerId: selectedCustomerId,
+      workflow_id: workflowID,
+    });
+
+    console.log("Success:", response.data.message);
+    toast.success("Workflow assigned to respective customer successfully!");
+  } catch (err) {
+    console.error("Error assigning workflow:", err.response?.data?.message || err.message);
+    toast.error("Failed to assign workflow to the customer");
+  }
+};
 
     return (
         <Layout role="exporter">
@@ -575,6 +631,27 @@ const WorkflowDetails = ({}) => {
 
                 {/* Right Side - Workflow Details */}
                 <RightContainer>
+
+                    <DropdownContainer>
+                        <label>Assign Customer:</label>
+                        <Dropdown value={selectedCustomerId}
+                                  onChange={(e) => setSelectedCustomerId(e.target.value)}>
+                            <DropdownOption value="">Select the customer</DropdownOption>
+                            {customers && customers.length > 0 ? (
+    customers.map((customer) => (
+      <option key={customer._id} value={customer._id}>
+        {customer.username}
+      </option>
+    ))
+  ) : (
+    <option disabled>No customers found</option>
+  )}
+                        </Dropdown>
+                    </DropdownContainer>
+                    <SendButton bgColor="#2D3142"
+                                hoverColor="#1F2532" onClick={assignWorkflowToCustomer} disabled={!selectedCustomerId}>
+                        Send to Customer
+                    </SendButton>
 
                     <InfoRow>
                         <Label>Workflow ID:</Label> <span>{workflowID || "0"}</span>
