@@ -10,6 +10,7 @@ const pluginRoutes = require('./routes/plugin');
 const workflowRoutes = require('./routes/workflow');
 const manufacturerRoutes = require('./routes/manufacturer');
 const topicRoutes = require('./routes/topic');
+const customerRoutes = require('./routes/customer');
 const { isTokenBlacklisted } = require('./middlewares/authMiddleware');
 
 const app = express();
@@ -29,6 +30,7 @@ app.use('/api/plugin', pluginRoutes);
 app.use('/api/workflow', workflowRoutes);
 app.use('/api/manufacturers', manufacturerRoutes);
 app.use('/api/topic', topicRoutes);
+app.use('/api/customer', customerRoutes);
 
 // Apply blacklist check for all protected routes
 app.use(isTokenBlacklisted);

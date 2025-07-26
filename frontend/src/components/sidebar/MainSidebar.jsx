@@ -6,6 +6,7 @@ import { FaArrowRight } from "react-icons/fa";
 
 import dashboardIcon from "../../assests/dashboard.png"
 import manufacturerIcon from "../../assests/conveyor.png"
+import customerIcon from "../../assests/customers.png"
 import settingsIcon from "../../assests/gear.png"
 import workflowIcon from "../../assests/workflow.png"
 import reportsIcon from "../../assests/statistics.png"
@@ -197,6 +198,7 @@ const MainSidebar = ({ expanded, setExpanded, role }) => {
             <NavItem onClick={() => navigate("/exporter-dashboard")}><Icon src={dashboardIcon} alt="Dashboard" /><NavText expanded={expanded}>Dashboard</NavText></NavItem>
           <NavItem onClick={() => navigate("/all-workflows")}><Icon src={workflowIcon} alt="Workflow" /><NavText expanded={expanded}>Workflows</NavText></NavItem>
             <NavItem onClick={() => navigate("/manufacturers")}><Icon src={manufacturerIcon} alt="Manufacturer" /><NavText expanded={expanded}>Manufacturers</NavText></NavItem>
+            <NavItem onClick={() => navigate("/customers")}><Icon src={customerIcon} alt="Customers" /><NavText expanded={expanded}>Customers</NavText></NavItem>
             {/* <NavItem onClick={() => navigate("/reports")}><Icon src={reportsIcon} alt="Report" /><NavText expanded={expanded}>Reports & Analytics</NavText></NavItem>
         <NavItem onClick={() => navigate("/settings")}><Icon src={settingsIcon} alt="Settings" /><NavText expanded={expanded}>Settings</NavText></NavItem> */}
           </>
