@@ -18,10 +18,16 @@ const Container = styled.div`
   border-radius: 8px;
   max-width: 500px;
   width: 100%;
+  margin-top: 130px;
+
+  /* Center this container horizontally and vertically */
+  position: absolute;
+  top: 50%;
+  left: 55%;
+  transform: translate(-50%, -50%);
 `;
 
 const Title = styled.h4`
-  margin-bottom: 1.5rem;
   text-align: center;
 `;
 
