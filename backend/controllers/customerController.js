@@ -1,5 +1,6 @@
 const User = require("../models/User");
 const Customer = require("../models/Customer");
+const Workflow = require("../models/Worflow");
 const sendEmail = require("../utils/sendEmail");
 
 const generateRandomPassword = () => {
@@ -100,5 +101,42 @@ exports.getAllCustomers = async (req, res) => {
     res.json(customers);
   } catch (error) {
     res.status(500).json({ error: error.message });
+  }
+};
+
+exports.assignWorkflowToCustomer = async (req, res) => {
+  const { customerId, workflow_id } = req.body;
+
+  try {
+    if (!workflow_id || !customerId) {
+      return res.status(400).json({ message: "workflow_id and customerId are required" });
+    }
+
+    console.log("Incoming workflowId:", workflow_id);
+
+    const workflow = await Workflow.findOne({ workflow_id: workflow_id.trim() });
+
+    console.log("Matched workflow: ", workflow);
+    if (!workflow) {
+      return res.status(404).json({ message: "Workflow not found" });
+    }
+
+    const updatedCustomer = await Customer.findByIdAndUpdate(
+      customerId,
+      { $addToSet: { orders: workflow._id } },
+      { new: true }
+    );
+
+    if (!updatedCustomer) {
+      return res.status(404).json({ message: "Customer not found" });
+    }
+
+    res.status(200).json({
+      message: "Workflow assigned successfully",
+      customer: updatedCustomer,
+    });
+  } catch (err) {
+    console.error("Assign workflow error:", err);
+    res.status(500).json({ message: "Server error" });
   }
 };
