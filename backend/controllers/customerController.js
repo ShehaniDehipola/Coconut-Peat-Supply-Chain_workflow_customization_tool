@@ -97,7 +97,7 @@ exports.createCustomer = async (req, res) => {
 
 exports.getAllCustomers = async (req, res) => {
   try {
-    const customers = await User.find({ role: "customer" });
+    const customers = await Customer.find();
     res.json(customers);
   } catch (error) {
     res.status(500).json({ error: error.message });

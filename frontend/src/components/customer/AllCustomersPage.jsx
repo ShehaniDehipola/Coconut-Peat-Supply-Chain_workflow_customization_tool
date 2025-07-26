@@ -5,6 +5,7 @@ import { useUser } from "../../context/UserContext";
 import Header from "../Header";
 import Layout from "../MainLayout";
 import { useNavigate } from "react-router-dom";
+import plusIcon from "../../assests/plus.png"
 
 const PageContainer = styled.div`
   padding: 1rem;
@@ -19,20 +20,32 @@ const SubHeader = styled.div`
 `;
 
 const Button = styled.button`
-  background-color: #2563eb;
-  color: white;
+  background-color: #ffffffff;
+  color: #2D3142;
   padding: 0.5rem 1rem;
-  border-radius: 0.75rem;
-  box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.15);
+  border-radius: 4px;
+  box-shadow: 0px #2D3142;
   transition: background-color 0.2s;
 
   &:hover {
-    background-color: #1e40af;
+    background-color: #2D3142;
+    color: white;
   }
 `;
 
+const ButtonContent = styled.span`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+`;
+
+const Icon = styled.img`
+  width: 18px;
+  height: 18px;
+  display: block;
+`;
+
 const SearchInput = styled.input`
-  margin-bottom: 1rem;
   padding: 0.5rem 0.75rem;
   border: 1px solid #ccc;
   border-radius: 0.75rem;
@@ -69,37 +82,6 @@ const TableCell = styled.td`
   padding: 0.5rem;
 `;
 
-const Card = styled.div`
-  border: 1px solid #ddd;
-  border-radius: 1rem;
-  padding: 1rem;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-  transition: box-shadow 0.2s;
-
-  &:hover {
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
-  }
-`;
-
-const CustomerName = styled.h3`
-  font-size: 1.25rem;
-  font-weight: bold;
-  margin-bottom: 0.25rem;
-`;
-
-const Text = styled.p`
-  font-size: 0.875rem;
-  color: #4b5563;
-  margin-bottom: 0.25rem;
-`;
-
-const OrderList = styled.ul`
-  list-style: disc;
-  padding-left: 1rem;
-  font-size: 0.875rem;
-  color: #374151;
-`;
-
 const EmptyText = styled.p`
   font-size: 0.875rem;
   color: #9ca3af;
@@ -109,6 +91,8 @@ const AllCustomers = () => {
   const { user } = useUser();
   const [customers, setCustomers] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [workflows, setWorkflows] = useState([]);
+
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -121,6 +105,22 @@ const AllCustomers = () => {
         console.error("Error fetching customers:", err);
       });
   }, []);
+
+  useEffect(() => {
+  axios.get("http://localhost:5000/api/workflow") 
+    .then((res) => {
+      setWorkflows(res.data);
+    })
+    .catch((err) => {
+      console.error("Error fetching workflows:", err);
+    });
+}, []);
+
+const getWorkflowById = (id) => {
+  return workflows.find((wf) => wf._id === id);
+};
+
+
 
 //   const fetchCustomers = async () => {
 //     try {
@@ -156,7 +156,13 @@ const AllCustomers = () => {
         value={searchTerm}
         onChange={(e) => setSearchTerm(e.target.value)}
         />
-        <Button onClick={() => navigate("/new-customer")}>Create New Customer</Button>
+        <Button onClick={() => navigate("/new-customer")}>
+  <ButtonContent>
+    <Icon src={plusIcon} alt="plus" />
+    <span>Create New Customer</span>
+  </ButtonContent>
+</Button>
+
         </SubHeader>
 
       <Grid>
@@ -177,20 +183,26 @@ const AllCustomers = () => {
         {filteredCustomers.map((customer) => (
           <TableRow key={customer._id}>
             <TableCell>
-              {customer.user_id}
+              {customer.customer_id}
             </TableCell>
-            <TableCell>{customer.username}</TableCell>
+            <TableCell>{customer.name}</TableCell>
             <TableCell>{customer.email}</TableCell>
             <TableCell>{customer.contactNumber}</TableCell>
             <TableCell>{customer.address}</TableCell>
 
             <TableCell>
               {customer.orders && customer.orders.length > 0 ? (
-                <TableCell>
-                  {customer.orders.map((order) => (
-                    <li key={order._id}>{order.workflow_id || order._id}</li>
-                  ))}
-                </TableCell>
+                <ul>
+      {customer.orders.map((workflowId) => {
+        const workflow = getWorkflowById(workflowId);
+        return (
+          <li key={workflowId}>
+            <strong>ID:</strong> {workflow?.workflow_id || "N/A"} <br />
+            <strong>Name:</strong> {workflow?.workflow_name || "Unknown"}
+          </li>
+        );
+      })}
+    </ul>
               ) : (
                 <EmptyText>No orders assigned.</EmptyText>
               )}
